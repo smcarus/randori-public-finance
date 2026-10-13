@@ -4,8 +4,6 @@ One codebase, three versions: a web app (installable, works offline), a macOS de
 
 **Illustrative only.** Every figure is for "Town of Example", a hypothetical Massachusetts town. Nothing here is advice to any town or issuer. Randori Resources' municipal advisor registration is pending.
 
-Published web version: https://claude.ai/artifact/8sPcVGJRUKiEtovFW8tddB
-
 ## What's inside
 
 | Tab | Source | Status |
