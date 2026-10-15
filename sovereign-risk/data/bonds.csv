@@ -1,0 +1,3 @@
+bond_id,country,face,coupon,maturity,amort_start,governing_law,cac,price,face_haircut,new_coupon,new_maturity,grace_years,exit_yield,note
+EX-BZ-1,Belize,100,0.065,2034,2030,New York,Two-limb,,0.25,0.04,2041,3,0.1,EXAMPLE terms for illustration only; not a real bond
+EX-CL-1,Chile,100,0.03,2031,,New York,Single-limb,,0,0.03,2036,5,0.06,EXAMPLE reprofiling for illustration only; not a real bond

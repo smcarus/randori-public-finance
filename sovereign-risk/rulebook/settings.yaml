@@ -1,0 +1,162 @@
+blend: 0.7
+coremin: 0
+popthr: 1.5
+pmlthr: 25
+smallw: 0.15
+cap3: 15
+cap4: 15
+cap7: 10
+adjlim: 10
+gfnadd: 1.5
+pbshock: 1.5
+gshock: 2
+passthru: 0.3
+dep: 30
+resfloat: 1
+boomboth: 0
+boomprice: 25
+squeeze: 60
+b2bfloor: 75
+pillar_weights:
+  1: 0.25
+  2: 0.2
+  3: 0.15
+  4: 0.15
+  5: 0.1
+  6: 0.1
+  7: 0.05
+debt_scenarios:
+  pb_shock: 1.5
+  growth_shock: 2
+  depreciation: 0.3
+  nominal_growth: 0.06
+backtest:
+  pd_a: -9
+  pd_b: 0.09
+  include_synthetic: 0
+  predictor: Model
+  alpha: 0.05
+  bin_edges:
+  - 0
+  - 0.005
+  - 0.01
+  - 0.025
+  - 0.05
+  - 0.1
+  - 0.25
+var_backtest:
+  confidence: 0.99
+  include_synthetic: 0
+  alpha: 0.05
+monte_carlo:
+  score_source: Base
+  rho: 0.3
+  df: 5
+  confidence_levels:
+  - 0.95
+  - 0.99
+  - 0.999
+  pd_cap: 0.45
+  trials: 2000
+  histogram_bands: 20
+default_fit:
+  features:
+  - debt_gdp
+  - growth
+  - inflation_log
+  - ca_gdp
+  - reserves_months
+  - past_default_10y
+  horizon_years: 1
+  bootstrap_draws: 500
+  band:
+  - 0.05
+  - 0.95
+  blend_weight_fitted: 0.7
+  cds_recovery: 0.4
+  gap_tolerance_logodds: 1
+pri:
+  perils:
+    ci:
+      name: Currency inconvertibility and transfer restriction
+      drivers:
+        1: 0.2
+        2: 0.6
+        5: 0.2
+      base_rate: 0.005
+      beta: 0.35
+      persistence: 0.6
+      severity: 0.5
+      recovery: 0.6
+      sector_multiplier: false
+    expropriation:
+      name: Expropriation and creeping expropriation
+      drivers:
+        3: 0.7
+        4: 0.3
+      base_rate: 0.003
+      beta: 0.35
+      persistence: 0.8
+      severity: 0.8
+      recovery: 0.4
+      sector_multiplier: true
+    political_violence:
+      name: Political violence
+      drivers:
+        4: 0.3
+        6: 0.7
+      base_rate: 0.004
+      beta: 0.35
+      persistence: 1
+      severity: 0.3
+      recovery: 0
+      sector_multiplier: false
+    breach:
+      name: Breach of contract and non-payment of awards
+      drivers:
+        1: 0.2
+        3: 0.5
+        4: 0.3
+      base_rate: 0.003
+      beta: 0.35
+      persistence: 0.7
+      severity: 0.6
+      recovery: 0.3
+      sector_multiplier: true
+    nhsfo:
+      name: Non-honoring of sovereign financial obligations
+      drivers: default_pd
+      persistence: 1
+      severity: 0.6
+      recovery: 0.5
+      sector_multiplier: false
+  mean_reversion: 0.8
+  hazard_cap: 0.5
+  cost_of_capital: 0.1
+  ul_multiplier: 3
+  expense_ratio: 0.25
+  discount_rate: 0.05
+  score_source: Base
+  sector_multipliers:
+    Extractives: 2
+    Power and infrastructure: 1.5
+    Telecoms: 1.2
+    Tourism: 0.9
+    Agriculture: 1
+    Manufacturing: 0.8
+    Finance: 1
+    Other: 1
+  obligor_factors:
+    Sovereign: 1
+    Sub-sovereign: 1.3
+    State-owned enterprise: 1.5
+restructuring:
+  valuation_year: 2026
+  base_months: 18
+  china_share_threshold: 0.2
+  china_months: 6
+  no_cac_months: 9
+  series_cac_months: 3
+  multi_law_months: 6
+  imf_program_months: -6
+  common_framework_months: 6

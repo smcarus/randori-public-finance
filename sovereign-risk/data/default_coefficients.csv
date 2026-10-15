@@ -1,0 +1,8 @@
+term,coefficient,note
+intercept,,from the Default PD tab
+debt_gdp,,from the Default PD tab
+growth,,from the Default PD tab
+inflation_log,,from the Default PD tab
+ca_gdp,,from the Default PD tab
+reserves_months,,from the Default PD tab
+past_default_10y,,from the Default PD tab

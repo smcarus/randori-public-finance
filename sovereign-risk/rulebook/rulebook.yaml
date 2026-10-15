@@ -1,0 +1,929 @@
+version: '0.4'
+pillars:
+  1: Fiscal and debt
+  2: External
+  3: Institutions and governance
+  4: Political and policy
+  5: Macro and financial
+  6: Security and social
+  7: Climate and disaster
+indicators:
+- pillar: 1
+  id: p1_ds_rev
+  label: Debt service, % of revenue
+  weight: 0.2
+  type: num
+  thresholds:
+  - 10
+  - 20
+  - 30
+  - 45
+  - 60
+- pillar: 1
+  id: p1_fxds_res
+  label: FX debt service next 24 months, % of FX reserves
+  weight: 0.15
+  type: num
+  thresholds:
+  - 10
+  - 25
+  - 50
+  - 75
+  - 100
+- pillar: 1
+  id: p1_debt
+  label: Gross debt, % of GDP (worse of baseline and stress, 2027)
+  weight: 0.15
+  type: num
+  thresholds:
+  - 30
+  - 45
+  - 60
+  - 80
+  - 100
+- pillar: 1
+  id: p1_gfn
+  label: Gross financing need, % of GDP (stress +1.5)
+  weight: 0.1
+  type: num
+  thresholds:
+  - 5
+  - 10
+  - 15
+  - 20
+  - 25
+- pillar: 1
+  id: p1_fxshare
+  label: FX share of debt, %
+  weight: 0.1
+  type: num
+  thresholds:
+  - 20
+  - 35
+  - 50
+  - 65
+  - 80
+- pillar: 1
+  id: p1_pbgap
+  label: Primary balance gap, pp of GDP (stress)
+  weight: 0.05
+  type: num
+  thresholds:
+  - 0
+  - -1
+  - -2
+  - -3.5
+  - -5
+- pillar: 1
+  id: p1_ddebt
+  label: Change in debt/GDP 2026-31, pp (worse path)
+  weight: 0.05
+  type: num
+  thresholds:
+  - -5
+  - 0
+  - 5
+  - 10
+  - 15
+- pillar: 1
+  id: p1_default
+  label: Default record, past 20 years
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 1
+  id: p1_contingent
+  label: Contingent liabilities and arrears
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 2
+  id: p2_ara
+  label: Net usable reserves, % of IMF ARA (stress)
+  weight: 0.15
+  type: num
+  thresholds:
+  - 150
+  - 125
+  - 100
+  - 75
+  - 50
+- pillar: 2
+  id: p2_efn
+  label: External financing need, % of net reserves
+  weight: 0.15
+  type: num
+  thresholds:
+  - 50
+  - 75
+  - 100
+  - 150
+  - 200
+- pillar: 2
+  id: p2_hot
+  label: Hot money, % of net reserves
+  weight: 0.1
+  type: num
+  thresholds:
+  - 10
+  - 25
+  - 50
+  - 75
+  - 100
+- pillar: 2
+  id: p2_fxdep
+  label: FX deposits, % of deposits
+  weight: 0.1
+  type: num
+  thresholds:
+  - 10
+  - 25
+  - 40
+  - 55
+  - 70
+- pillar: 2
+  id: p2_regime
+  label: Exchange regime and convertibility
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 2
+  id: p2_backstop
+  label: Official backstop
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 2
+  id: p2_bankaccess
+  label: Access to the dollar banking system
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 2
+  id: p2_ca
+  label: Current account, % of GDP (stress)
+  weight: 0.05
+  type: num
+  thresholds:
+  - 0
+  - -2
+  - -4
+  - -6
+  - -8
+- pillar: 2
+  id: p2_stdebt
+  label: Short-term external debt, % of net reserves
+  weight: 0.05
+  type: num
+  thresholds:
+  - 10
+  - 25
+  - 50
+  - 75
+  - 100
+- pillar: 2
+  id: p2_extdebt_exp
+  label: External debt, % of exports
+  weight: 0.05
+  type: num
+  thresholds:
+  - 100
+  - 150
+  - 200
+  - 250
+  - 300
+- pillar: 2
+  id: p2_conc
+  label: Export concentration, %
+  weight: 0.05
+  type: num
+  thresholds:
+  - 20
+  - 35
+  - 50
+  - 65
+  - 80
+- pillar: 2
+  id: p2_reer
+  label: Real exchange rate vs 10-year average, %
+  weight: 0.05
+  type: num
+  thresholds:
+  - 0
+  - 5
+  - 10
+  - 18
+  - 25
+- pillar: 3
+  id: p3_investor
+  label: Record on investor treatment
+  weight: 0.15
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 3
+  id: p3_awards
+  label: Arbitration award compliance
+  weight: 0.15
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 3
+  id: p3_treaty
+  label: Treaty protection
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 3
+  id: p3_wgi_change
+  label: WGI composite, 3-year change, pct points
+  weight: 0.1
+  type: num
+  thresholds:
+  - 5
+  - 0
+  - -3
+  - -6
+  - -10
+- pillar: 3
+  id: p3_wgi_level
+  label: WGI composite percentile
+  weight: 0.1
+  type: num
+  thresholds:
+  - 80
+  - 60
+  - 40
+  - 25
+  - 10
+- pillar: 3
+  id: p3_vdem
+  label: V-Dem judicial constraints
+  weight: 0.1
+  type: num
+  thresholds:
+  - 0.85
+  - 0.7
+  - 0.5
+  - 0.3
+  - 0.15
+- pillar: 3
+  id: p3_wjp
+  label: WJP civil justice
+  weight: 0.1
+  type: num
+  thresholds:
+  - 0.7
+  - 0.6
+  - 0.5
+  - 0.4
+  - 0.3
+- pillar: 3
+  id: p3_data
+  label: Budget and data credibility
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 3
+  id: p3_staterole
+  label: State's growing role
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 3
+  id: p3_cbi
+  label: Central bank independence
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_street
+  label: Street pressure against adjustment
+  weight: 0.15
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_military
+  label: Military and elite cohesion
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_regime
+  label: Regime type and factionalism
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_coup
+  label: Coup and irregular transfer
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_election
+  label: Election timing and contestation
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_predict
+  label: Policy predictability
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_pass
+  label: Ability to pass what it needs
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_stance
+  label: Stance toward creditors and investors
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_patrons
+  label: Outside patrons
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_geo
+  label: Geopolitical position
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 4
+  id: p4_succession
+  label: Leader and succession
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 5
+  id: p5_bankgov
+  label: Banks' claims on government, % of assets
+  weight: 0.1
+  type: num
+  thresholds:
+  - 10
+  - 15
+  - 25
+  - 35
+  - 45
+- pillar: 5
+  id: p5_fxloans
+  label: FX loans, % of loans
+  weight: 0.1
+  type: num
+  thresholds:
+  - 10
+  - 20
+  - 35
+  - 50
+  - 65
+- pillar: 5
+  id: p5_weakbank
+  label: Concentration and weakest large bank
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 5
+  id: p5_commod_corr
+  label: Credit vs export price correlation
+  weight: 0.1
+  type: num
+  thresholds:
+  - 0.1
+  - 0.25
+  - 0.4
+  - 0.55
+  - 0.7
+- pillar: 5
+  id: p5_infl
+  label: Inflation, % (stress)
+  weight: 0.1
+  type: num
+  thresholds:
+  - 3
+  - 6
+  - 10
+  - 20
+  - 40
+- pillar: 5
+  id: p5_growth
+  label: Real growth 2027, % (stress -2)
+  weight: 0.1
+  type: num
+  thresholds:
+  - 5
+  - 3.5
+  - 2
+  - 0
+  - -2
+- pillar: 5
+  id: p5_sob
+  label: State-owned banks, % of assets
+  weight: 0.05
+  type: num
+  thresholds:
+  - 10
+  - 20
+  - 35
+  - 50
+  - 65
+- pillar: 5
+  id: p5_nonbank
+  label: Lenders outside the banks
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 5
+  id: p5_creditgap
+  label: Credit-to-GDP gap, pp
+  weight: 0.05
+  type: num
+  thresholds:
+  - 0
+  - 2
+  - 5
+  - 10
+  - 15
+- pillar: 5
+  id: p5_npl
+  label: NPLs, %
+  weight: 0.05
+  type: num
+  thresholds:
+  - 3
+  - 5
+  - 8
+  - 12
+  - 18
+- pillar: 5
+  id: p5_deposits
+  label: Real deposit growth, %
+  weight: 0.05
+  type: num
+  thresholds:
+  - 5
+  - 0
+  - -5
+  - -10
+  - -15
+- pillar: 5
+  id: p5_vol
+  label: Growth volatility, pp
+  weight: 0.05
+  type: num
+  thresholds:
+  - 1.5
+  - 2.5
+  - 3.5
+  - 5
+  - 7
+- pillar: 5
+  id: p5_realrate
+  label: Real policy rate, %
+  weight: 0.05
+  type: twosided
+  thresholds:
+  - 0
+  - -1.5
+  - -3
+  - -5
+  - -8
+  high_thresholds:
+  - 4
+  - 6
+  - 8
+  - 10
+  - 12
+- pillar: 5
+  id: p5_gdppc
+  label: GDP per person, US$
+  weight: 0.05
+  type: num
+  thresholds:
+  - 30000
+  - 15000
+  - 6000
+  - 2500
+  - 1000
+- pillar: 6
+  id: p6_conflict
+  label: Armed conflict
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 6
+  id: p6_homicide
+  label: Homicide per 100,000
+  weight: 0.1
+  type: num
+  thresholds:
+  - 2
+  - 5
+  - 10
+  - 20
+  - 40
+- pillar: 6
+  id: p6_gang
+  label: Gang control and extortion
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 6
+  id: p6_attacks
+  label: Attacks on business and staff
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 6
+  id: p6_territory
+  label: State control of territory
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 6
+  id: p6_youth
+  label: Youth unemployment, %
+  weight: 0.1
+  type: num
+  thresholds:
+  - 8
+  - 12
+  - 18
+  - 25
+  - 35
+- pillar: 6
+  id: p6_goci
+  label: Criminal markets score (GOCI)
+  weight: 0.05
+  type: num
+  thresholds:
+  - 3
+  - 4
+  - 5.5
+  - 7
+  - 8
+- pillar: 6
+  id: p6_cyber
+  label: Cyber attacks on state systems
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 6
+  id: p6_trend
+  label: Violence trend vs 5-year average
+  weight: 0.05
+  type: num
+  thresholds:
+  - 0.8
+  - 1
+  - 1.5
+  - 2
+  - 3
+- pillar: 6
+  id: p6_inequality
+  label: Inequality and excluded groups
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 6
+  id: p6_food
+  label: Food insecurity, % IPC3+
+  weight: 0.05
+  type: num
+  thresholds:
+  - 2
+  - 5
+  - 10
+  - 20
+  - 30
+- pillar: 6
+  id: p6_spillover
+  label: Spillover from neighbors
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 6
+  id: p6_gti
+  label: Global Terrorism Index
+  weight: 0.05
+  type: num
+  thresholds:
+  - 1
+  - 2.5
+  - 4
+  - 6
+  - 8
+- pillar: 6
+  id: p6_forces
+  label: Security forces
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 7
+  id: p7_aal
+  label: Expected annual loss, % of GDP
+  weight: 0.15
+  type: num
+  thresholds:
+  - 0.1
+  - 0.3
+  - 0.7
+  - 1.5
+  - 3
+- pillar: 7
+  id: p7_pml
+  label: 1-in-100-year loss, % of GDP
+  weight: 0.1
+  type: num
+  thresholds:
+  - 2
+  - 5
+  - 10
+  - 25
+  - 50
+- pillar: 7
+  id: p7_b2b
+  label: Back-to-back disaster chance, %
+  weight: 0.1
+  type: num
+  thresholds:
+  - 5
+  - 10
+  - 20
+  - 35
+  - 50
+- pillar: 7
+  id: p7_earner
+  label: Loss to the main earner, % of exports
+  weight: 0.1
+  type: num
+  thresholds:
+  - 10
+  - 20
+  - 35
+  - 50
+  - 65
+- pillar: 7
+  id: p7_gap
+  label: Protection gap, %
+  weight: 0.1
+  type: num
+  thresholds:
+  - 40
+  - 60
+  - 75
+  - 88
+  - 95
+- pillar: 7
+  id: p7_protect
+  label: Financial protection
+  weight: 0.1
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 7
+  id: p7_basis
+  label: Basis risk
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 7
+  id: p7_exposure
+  label: Exposure concentration, %
+  weight: 0.05
+  type: num
+  thresholds:
+  - 5
+  - 10
+  - 20
+  - 35
+  - 50
+- pillar: 7
+  id: p7_conflict
+  label: Climate-driven conflict
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 7
+  id: p7_transition
+  label: Transition risk, %
+  weight: 0.05
+  type: num
+  thresholds:
+  - 5
+  - 15
+  - 30
+  - 50
+  - 70
+- pillar: 7
+  id: p7_ndgain
+  label: ND-GAIN vulnerability
+  weight: 0.05
+  type: num
+  thresholds:
+  - 0.35
+  - 0.4
+  - 0.45
+  - 0.52
+  - 0.58
+- pillar: 7
+  id: p7_water
+  label: Water stress
+  weight: 0.05
+  type: rubric
+  thresholds:
+  - null
+  - null
+  - null
+  - null
+  - null
+- pillar: 7
+  id: p7_recovery
+  label: Recovery speed, years
+  weight: 0.05
+  type: num
+  thresholds:
+  - 1
+  - 2
+  - 3
+  - 4.5
+  - 6

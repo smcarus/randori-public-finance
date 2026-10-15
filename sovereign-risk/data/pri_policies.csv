@@ -1,0 +1,4 @@
+policy_id,country,sector,obligor,term_years,limit,insured_share,deductible,location_mult,ci,expropriation,political_violence,breach,nhsfo,note
+EX-1,Belize,Tourism,Sovereign,10,25,0.9,0.05,1,1,1,1,1,0,EXAMPLE policy for illustration only
+EX-2,Chile,Extractives,Sovereign,15,100,0.9,0.05,1.2,1,1,1,1,0,EXAMPLE policy for illustration only
+EX-3,Belize,Power and infrastructure,Sovereign,7,20,1,0,1,0,0,0,0,1,EXAMPLE policy for illustration only
