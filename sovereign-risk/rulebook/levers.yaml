@@ -1,0 +1,135 @@
+# Stability levers: measures a sovereign, investor or insurer can take to reduce risk.
+# ILLUSTRATIVE magnitudes, not calibrated. Edit here; review by pull request.
+#
+# Effects:
+#   improve:      move an indicator toward lower risk by this amount (indicator units; rubric points 0-100)
+#   improve_pct:  move a numeric indicator toward lower risk by this % of its value
+#   lgd_mult:     multiply the loss given default on the portfolio exposure (investor protection)
+#   pri_net_share: share of the PRI book's expected loss the insurer keeps after reinsurance
+#   bond_guarantee: share of each restructured bond's new cash flows guaranteed (valued at guarantor_yield)
+#   bond_cac:     collective action clause assumed on the country's bonds (affects holdout risk and months to deal)
+guarantor_yield: 0.045
+categories:
+  - Insurance and risk transfer
+  - Credit and debt
+  - Banking
+  - Revenue and fiscal
+  - Investor protection
+levers:
+  - id: cat_insurance
+    category: Insurance and risk transfer
+    label: Parametric catastrophe insurance
+    detail: Regional parametric cover (CCRIF-type) that pays out within weeks of a qualifying storm, quake or flood.
+    effects:
+      - {ind: p7_protect, improve: 25}
+      - {ind: p7_gap, improve: 20}
+      - {ind: p7_recovery, improve: 1}
+  - id: cat_bond
+    category: Insurance and risk transfer
+    label: Catastrophe bond or disaster reinsurance
+    detail: Transfers the sovereign's tail disaster loss to capital markets or reinsurers.
+    effects:
+      - {ind: p7_gap, improve: 20}
+      - {ind: p7_protect, improve: 15}
+  - id: reinsurance
+    category: Insurance and risk transfer
+    label: Reinsurance of the PRI book
+    detail: Quota-share treaty ceding half of the political risk insurance book to reinsurers.
+    effects:
+      - {pri_net_share: 0.5}
+  - id: guarantee
+    category: Credit and debt
+    label: Multilateral partial credit guarantee
+    detail: A development bank guarantees part of new debt, lowering cost and raising recovery.
+    effects:
+      - {ind: p1_ds_rev, improve_pct: 5}
+      - {lgd_mult: 0.7}
+      - {bond_guarantee: 0.4}
+  - id: contingent_credit
+    category: Credit and debt
+    label: Contingent credit lines
+    detail: Pre-arranged IMF precautionary lines or World Bank Cat DDO that draw down in a shock.
+    effects:
+      - {ind: p2_backstop, improve: 25}
+      - {ind: p7_protect, improve: 10}
+  - id: debt_swap
+    category: Credit and debt
+    label: Debt-for-nature or climate swap
+    detail: Buys back expensive debt at a discount, funded by cheaper insured or guaranteed debt.
+    effects:
+      - {ind: p1_debt, improve: 5}
+      - {ind: p1_ds_rev, improve_pct: 10}
+  - id: liability_mgmt
+    category: Credit and debt
+    label: Longer maturities and local-currency debt
+    detail: Liability management that smooths redemptions and cuts the foreign-currency share.
+    effects:
+      - {ind: p1_gfn, improve: 2}
+      - {ind: p1_fxshare, improve: 10}
+      - {ind: p1_fxds_res, improve_pct: 15}
+  - id: crdc
+    category: Credit and debt
+    label: Climate-resilient debt clauses
+    detail: Bond and loan clauses that pause debt service after a qualifying disaster.
+    effects:
+      - {ind: p7_protect, improve: 15}
+      - {ind: p1_gfn, improve: 0.5}
+  - id: cac_upgrade
+    category: Credit and debt
+    label: Single-limb collective action clauses
+    detail: Aggregated voting across bonds, which limits holdouts in a restructuring.
+    effects:
+      - {bond_cac: Single-limb}
+  - id: bank_resolution
+    category: Banking
+    label: Bank resolution, deposit insurance and recapitalisation
+    detail: A working resolution regime and funded deposit insurance, with weak banks recapitalised.
+    effects:
+      - {ind: p5_weakbank, improve: 25}
+      - {ind: p5_npl, improve: 2}
+  - id: nexus
+    category: Banking
+    label: Smaller bank holdings of government debt
+    detail: Limits that loosen the link between bank balance sheets and the sovereign.
+    effects:
+      - {ind: p5_bankgov, improve: 5}
+  - id: fx_prudential
+    category: Banking
+    label: Limits on foreign-currency lending and deposits
+    detail: Macroprudential rules that reduce dollarisation in the banking system.
+    effects:
+      - {ind: p5_fxloans, improve: 10}
+      - {ind: p2_fxdep, improve: 10}
+  - id: revenue
+    category: Revenue and fiscal
+    label: Revenue mobilisation
+    detail: Tax and customs measures worth about 2% of GDP.
+    effects:
+      - {ind: p1_ds_rev, improve_pct: 10}
+      - {ind: p1_pbgap, improve: 1}
+  - id: stabilisation_fund
+    category: Revenue and fiscal
+    label: Commodity or fiscal stabilisation fund
+    detail: Saves windfall revenue and releases it in downturns.
+    effects:
+      - {ind: p2_ara, improve: 15}
+      - {ind: p1_gfn, improve: 1}
+  - id: fiscal_rule
+    category: Revenue and fiscal
+    label: Credible fiscal rule and budget transparency
+    detail: An enforced fiscal rule with timely, audited budget data.
+    effects:
+      - {ind: p3_data, improve: 25}
+      - {ind: p1_pbgap, improve: 0.5}
+  - id: pri_cover
+    category: Investor protection
+    label: Political risk insurance on the investment
+    detail: MIGA or DFC-type cover on the investor's exposure. Protects the investor, not the country score.
+    effects:
+      - {lgd_mult: 0.5}
+  - id: treaty
+    category: Investor protection
+    label: Investment treaty and arbitration protection
+    detail: Structuring the investment through a treaty country with access to international arbitration.
+    effects:
+      - {ind: p3_treaty, improve: 25}

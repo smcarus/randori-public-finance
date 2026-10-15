@@ -49,12 +49,12 @@ def default_table(cfg, model, root=ROOT):
 def pri_book(cfg, model, dtable=None, root=ROOT):
     dtable = dtable or default_table(cfg, model, root)
     return {p['policy_id']: price_policy(cfg, model, p, pd_override=dtable[p['country']]['blended_pd'])
-            for p in _rows('pri_policies.csv', root)}
+            for p in _rows('pri_policies.csv', root) if p['country'] in dtable}
 
 
 def bond_table(cfg, root=ROOT):
     V = cfg.settings['restructuring']['valuation_year']
-    bonds = _rows('bonds.csv', root)
+    bonds = [b for b in _rows('bonds.csv', root) if b['country'] in cfg.countries]
     cred = {r['country']: r for r in _rows('creditor_map.csv', root)}
     out = {}
     for b in bonds:

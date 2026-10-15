@@ -1,0 +1,30 @@
+"""Lever and dashboard tests that need no analyst inputs."""
+import pytest
+
+from sovrisk import load_config
+from sovrisk.dashboard import dashboard_data, grade, render
+from sovrisk.levers import _improve, load_levers
+
+
+def test_levers_file_is_valid():
+    cfg = load_config()
+    L = load_levers(cfg)
+    assert len(L['levers']) >= 10
+    assert all(lv['category'] in L['categories'] and lv['label'] and lv['detail'] for lv in L['levers'])
+
+
+def test_improve_moves_toward_lower_risk():
+    up = {'type': 'num', 'thresholds': [10, 20, 30, 45, 60]}       # higher value is riskier
+    down = {'type': 'num', 'thresholds': [150, 125, 100, 75, 50]}  # higher value is safer
+    assert _improve(up, 40, {'improve': 5}) == 35
+    assert _improve(down, 80, {'improve': 15}) == 95
+    assert _improve(up, 40, {'improve_pct': 10}) == pytest.approx(36)
+    assert _improve({'type': 'rubric'}, 10, {'improve': 25}) == 0
+    assert _improve(up, None, {'improve': 5}) is None
+
+
+def test_dashboard_renders_without_inputs():
+    cfg = load_config()
+    html = render(dashboard_data(cfg))
+    assert 'FOR RESEARCH PURPOSES ONLY. CONFIDENTIAL.' in html and 'Stability levers' in html
+    assert grade(55.0) == 6 and grade(100) == 10

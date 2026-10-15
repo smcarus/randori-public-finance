@@ -11,6 +11,10 @@ dependencies = ["numpy>=1.26", "scipy>=1.11", "pyyaml>=6", "openpyxl>=3.1"]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+dashboard = ["plotly>=5"]
 
 [tool.setuptools]
 packages = ["sovrisk"]
+
+[tool.setuptools.package-data]
+sovrisk = ["assets/*"]

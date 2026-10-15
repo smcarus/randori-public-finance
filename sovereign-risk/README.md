@@ -23,6 +23,8 @@ their golden values use Randori's analyst inputs, so they are not in this public
 | `sovrisk/restructuring.py` | Restructuring, Restructuring Calc | Bond cash flows, NPV haircut (SZ), market haircut (CT), recovery, holdout risk, months to deal |
 | `sovrisk/default_fit.py`, `connectors.py` | Default PD | Logit fit, country bootstrap bands, walk-forward AUC, log-odds blend, CDS-implied benchmark |
 | `sovrisk/decisions.py` | (all three) | Runs the decision modules on the data files |
+| `sovrisk/levers.py` | (Python only) | Stability levers (insurance, reinsurance, credit, banking, revenue, investor protection) from `rulebook/levers.yaml`; exact re-run with any set switched on. ILLUSTRATIVE magnitudes |
+| `sovrisk/dashboard.py` | (all) | One HTML page: colour-coded risk map, ranking, Monte Carlo loss, and per-country pillars, scenarios, sensitivity, default PD, insurance perils, bond recovery and lever toggles |
 
 ## Layout
 
@@ -38,8 +40,11 @@ tests/test_engine.py      engine tests that need no analyst inputs
 
 ```
 pip install -e .[test]
-pytest -q                          # 8 engine tests
+pytest -q                          # 11 engine tests
 python -m sovrisk.cli --out outputs
+pip install -e .[dashboard]       # optional: embeds plotly.js so the dashboard works offline
+python -m sovrisk.dashboard --out outputs/dashboard.html
+python -m sovrisk.levers --list
 ```
 
 ## Differences from the workbook
