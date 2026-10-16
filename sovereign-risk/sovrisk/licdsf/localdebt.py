@@ -1,0 +1,697 @@
+"""LIC DSF 'Input 5 - Local-debt Financing': locally-issued public debt.
+
+Terms of up to five domestic debt instruments (shares, maturity, grace, real / nominal interest), the public
+gross financing needs (primary deficit, external and domestic debt service, IMF flows, other needs) and how they
+are filled - external financing first, then the domestic instruments, with residual short-term local-currency
+debt; debt service of OLD and NEW locally-issued debt in LCU and USD, outstanding stocks (% of GDP), and the
+debt-dynamics calculations per debt type and vintage of issuance (in LCU and USD) that split locally-issued debt
+into external and domestic debt on the residency or currency criterion chosen in Input 1.
+
+The sheet has 17,179 formula cells in ~400 distinct patterns, ported as the workbook's formulas per block of
+cells (see inputs.py: the formula is written for the block's first cell and filled over the block's ranges, as
+Excel copies it) and run by the evaluator in inputs.py.
+"""
+from .inputs import evaluate
+
+QUIRKS = [
+    "None found that change values for the sample country: every one of the 17,179 cells matches the template.",
+]
+
+SHEETS = ['Input 5 - Local-debt Financing']
+
+# ====================================================================== the sheets
+BLOCKS = {
+    'Input 5 - Local-debt Financing': [
+        # row 1
+        ('A1 A8', '=++OFFSET(translation!C486, 0,LANG)'),
+        # row 3
+        ('A3:A5', "='Input 1 - Basics'!B3"),
+        ('I3', "='Input 1 - Basics'!B18"),
+        # row 5
+        ('H5', '=I5-1'),
+        ('I5', '=ProjectionYear'),
+        ('J5:AC5 J222:AC222 AF222:AY222 BB222:BU222', '=I5+1'),
+        # row 7
+        ('A7', '=++OFFSET(translation!C487, 0,LANG)'),
+        ('C7', "='Input 4 - External Financing'!G6"),
+        ('D7', '=++OFFSET(translation!C494, 0,LANG)'),
+        ('I7', '=++OFFSET(translation!C497, 0,LANG)'),
+        # row 9
+        ('A9', '=IF(\'Input 1 - Basics\'!C33=lookup!$X$4, lookup!AP4, "")'),
+        # row 10
+        ('A10:A18 A20:A22', '=++OFFSET(translation!C498, 0,LANG)'),
+        ('O10:AC10 O12:AC13 O16:AC18 O20:AC22 O27:AC28 O31:AC33 O35:AC37', '=N10'),
+        # row 19
+        ('A19', '=IF($B$116=lookup!$X$4,lookup!$AP$29,lookup!AP30)'),
+        # row 24
+        ('A24', '=A8'),
+        # row 25
+        ('A25', "=IF('Input 1 - Basics'!C33=lookup!$X$4, lookup!AP7, lookup!AP8)"),
+        # row 26
+        ('A26:A37 I27:N28 C31:D33 I31:N33 C35:D37 I35:N37', '=A11'),
+        # row 39
+        ('A39:A40 A42:A44', '=++OFFSET(translation!C517, 0,LANG)'),
+        # row 40
+        ('I40:AC40', "='Macro-Debt_Data'!U48-'Macro-Debt_Data'!U45"),
+        # row 42
+        ('I42:AC42 I47:AC47', '=I43+I44'),
+        # row 43
+        ('I43:AC43', '=I140'),
+        # row 44
+        ('I44:AC44', '=(Ext_Debt_Data!F61)*I219'),
+        # row 45: o/w: IMF
+        ('I45:AC45', '=Ext_Debt_Data!F12*I219'),
+        # row 47
+        ('A47', '=++OFFSET(translation!C524, 0,LANG)'),
+        # row 48
+        ('A48:A49 A122:A124', '=A43'),
+        ('I48:AC48', '=I171'),
+        # row 49
+        ('I49:AC49', '=Ext_Debt_Data!F140*I219'),
+        # row 50: o/w: IMF
+        ('I50:AC50', '=(Ext_Debt_Data!F144+Ext_Debt_Data!F194)*I219'),
+        # row 52
+        ('A52 A54 A56', '=++OFFSET(translation!C528, 0,LANG)'),
+        ('I52:AC52', '=(Ext_Debt_Data!F387+Ext_Debt_Data!F388)*I219'),
+        # row 54
+        ('I54:AC54', "='Baseline - public'!O33/100*'Baseline - public'!O52"),
+        # row 56
+        ('I56:AC56', '=I40+I42+I47+I52+I54'),
+        # row 57: (in % of GDP)
+        ('I57:AC57', '=I56/I218'),
+        # row 58
+        ('A58', '=++OFFSET(translation!C533, 0,LANG)'),
+        ('I58:AC58', "='Input 4 - External Financing'!L8*I219"),
+        # row 59: o/w: IMF
+        ('I59:AC59', '=Ext_Debt_Data!F72*I219'),
+        # row 60
+        ('A60 A134', '=++OFFSET(translation!C534, 0,LANG)'),
+        ('I60:AC60', '=Ext_Debt_Data!F379*I219'),
+        # row 61
+        ('A61:A63', '=++OFFSET(translation!C535,0,LANG)'),
+        ('I61:AC61', "=IF(ISNUMBER(-'Input 3 - Macro-Debt data(DMX)'!X26), -'Input 3 - Macro-Debt data(DMX)'!X26, 0)"),
+        # row 62
+        ('I62:AC62', '=I45+I50-I59'),
+        # row 64
+        ('A64', '="(12) "&++OFFSET(translation!C538,0,LANG)&" (= 6 - (7 + 8 + 9 + 10+11))"'),
+        ('I64:AC64', '=I56-(I58+I60+I61+I62+I63)'),
+        # row 66
+        ('D66', '=++OFFSET(translation!C539,0,LANG)'),
+        ('E66:E72', '=++OFFSET(translation!C540,0,LANG)'),
+        ('I66:AC66', "=-'Macro-Debt_Data'!U44"),
+        # row 67
+        ('I67:AC67', "='Macro-Debt_Data'!U49"),
+        # row 68
+        ('I68:AC68', "='Macro-Debt_Data'!U26*'Macro-Debt_Data'!U60"),
+        # row 69
+        ('I69:AC69', "='Macro-Debt_Data'!U24*'Macro-Debt_Data'!U60"),
+        # row 70
+        ('I70:AC70', "='Macro-Debt_Data'!T16"),
+        # row 71
+        ('I71:AC71', '=I54'),
+        # row 72
+        ('I72:AC72', '=SUM(I66:I71)'),
+        # row 74
+        ('C74 C81', '=++OFFSET(translation!C547,0,LANG)'),
+        # row 75
+        ('C75', '=IF(Int_Ext=0, ++OFFSET(translation!C549,0,LANG), translation!J549)'),
+        # row 76
+        ('C76', '=++OFFSET(translation!C550,0,LANG)&" "&++OFFSET(translation!C551,0,LANG)&++OFFSET(translation!C552,0,LANG)'),
+        # row 77
+        ('A77', '=++OFFSET(translation!C556,0,LANG)'),
+        ('I77:AC77 A174', '=I64'),
+        # row 78
+        ('D78', '=++OFFSET(translation!C553,0,LANG)'),
+        # row 79
+        ('A79', '=++OFFSET(translation!C555,0,LANG)'),
+        ('I79:AC79', '=IF($B$116=lookup!$X$4,I81+I97,I81)'),
+        # row 80
+        ('A80', '=++OFFSET(translation!C558,0,LANG)'),
+        # row 81
+        ('A81:A95 A97:A98 A100:A101 A103:A110', '=A8'),
+        ('I81:AC81', '=I83+I84+I87'),
+        # row 82
+        ('C82', '=I5&"-"&RIGHT(N5,2)'),
+        ('D82', '=O5&"-"&RIGHT(S5,2)'),
+        ('E82', '=T5&"-"&RIGHT(X5,2)'),
+        ('F82', '=Y5&"-"&RIGHT(AC5,2)'),
+        # row 83
+        ('I83:N83 I85:N86', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!X147), 'Input 3 - Macro-Debt data(DMX)'!X147, 0),$C83*I$77)"),
+        ('O83:S83 O85:S86', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AD147), 'Input 3 - Macro-Debt data(DMX)'!AD147, 0),$D83*O$77)"),
+        ('T83:X83 T85:X86', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AI147), 'Input 3 - Macro-Debt data(DMX)'!AI147, 0),$E83*T$77)"),
+        ('Y83:AC83 Y85:AC86', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AN147), 'Input 3 - Macro-Debt data(DMX)'!AN147, 0),$F83*Y$77)"),
+        # row 84
+        ('I84:AC84 I99:AC99', '=SUM(I85:I86)'),
+        # row 85
+        ('C85:F85', "=IF('Input 5 - Local-debt Financing'!$B$116=lookup!$X$4,1-C83-C86-C89-C90-C91-C93-C94-C95-C100-C101-C104-C105-C106-C108-C109-C110,1-C83-C86-C89-C90-C91-C93-C94-C95)"),
+        # row 87
+        ('I87:AC87 I102:AC102', '=I88+I92'),
+        # row 88
+        ('I88:AC88 I92:AC92 I103:AC103 I107:AC107', '=SUM(I89:I91)'),
+        # row 89
+        ('I89:N91', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!X152), 'Input 3 - Macro-Debt data(DMX)'!X152, 0),$C89*I$77)"),
+        ('O89:S91', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AD152), 'Input 3 - Macro-Debt data(DMX)'!AD152, 0),$D89*O$77)"),
+        ('T89:X91', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AI152), 'Input 3 - Macro-Debt data(DMX)'!AI152, 0),$E89*T$77)"),
+        ('Y89:AC91', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AN152), 'Input 3 - Macro-Debt data(DMX)'!AN152, 0),$F89*Y$77)"),
+        # row 93
+        ('I93:N95', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!X155), 'Input 3 - Macro-Debt data(DMX)'!X155, 0),$C93*I$77)"),
+        ('O93:S95', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AD155), 'Input 3 - Macro-Debt data(DMX)'!AD155, 0),$D93*O$77)"),
+        ('T93:X95', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AI155), 'Input 3 - Macro-Debt data(DMX)'!AI155, 0),$E93*T$77)"),
+        ('Y93:AC95', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AN155), 'Input 3 - Macro-Debt data(DMX)'!AN155, 0),$F93*Y$77)"),
+        # row 97
+        ('I97:AC97', '=I99+I102'),
+        # row 99
+        ('A99 A102', '=A11'),
+        # row 100
+        ('I100:N101', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!X172), 'Input 3 - Macro-Debt data(DMX)'!X172, 0),$C100*I$77)"),
+        ('O100:S101', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AD172), 'Input 3 - Macro-Debt data(DMX)'!AD172, 0),$D100*O$77)"),
+        ('T100:X101', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AI172), 'Input 3 - Macro-Debt data(DMX)'!AI172, 0),$E100*T$77)"),
+        ('Y100:AC101', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AN172), 'Input 3 - Macro-Debt data(DMX)'!AN172, 0),$F100*Y$77)"),
+        # row 104
+        ('I104:N106', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!X175), 'Input 3 - Macro-Debt data(DMX)'!X175, 0),$C104*I$77)"),
+        ('O104:S106', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AD175), 'Input 3 - Macro-Debt data(DMX)'!AD175, 0),$D104*O$77)"),
+        ('T104:X106', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AI175), 'Input 3 - Macro-Debt data(DMX)'!AI175, 0),$E104*T$77)"),
+        ('Y104:AC106', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AN175), 'Input 3 - Macro-Debt data(DMX)'!AN175, 0),$F104*Y$77)"),
+        # row 108
+        ('I108:N110', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!X178), 'Input 3 - Macro-Debt data(DMX)'!X178, 0),$C108*I$77)"),
+        ('O108:S110', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AD178), 'Input 3 - Macro-Debt data(DMX)'!AD178, 0),$D108*O$77)"),
+        ('T108:X110', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AI178), 'Input 3 - Macro-Debt data(DMX)'!AI178, 0),$E108*T$77)"),
+        ('Y108:AC110', "=IF($C$78=0,IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!AN178), 'Input 3 - Macro-Debt data(DMX)'!AN178, 0),$F108*Y$77)"),
+        # row 112
+        ('A112:A113', '=++OFFSET(translation!C559,0,LANG)'),
+        ('I112:AC112', '=I77-I79'),
+        # row 113
+        ('I113:J113', '=IF(I85+I112>=0,"0","Over-financing")'),
+        ('K113:AC113', '=IF(K85+K112>=0,0,"Over-financing")'),
+        # row 114
+        ('I114:AC114', '=IF(I112<0, "Overfinancing", "0")'),
+        # row 116
+        ('A116:B116', "='Input 1 - Basics'!B33"),
+        # row 117
+        ('A117:A119', '=++OFFSET(translation!C580,0,LANG)'),
+        ('I117:AC117', '=IF($D$10=1,I83,0)+I84+I112'),
+        # row 118
+        ('I118:AC118', '=IF($D$10=1,0,I83)+I87+I102'),
+        # row 119
+        ('I119:AC119', '=SUM(I117:I118)'),
+        # row 120
+        ('I120:AC120', '=I119-(I79+I112)'),
+        # row 121
+        ('A121', '="("&B116&")"'),
+        # row 122
+        ('I122:AC122', '=IF($B$116=lookup!$X$4,IF($D$10=1,I83,0)+I84+I112,IF($D$10=1,I83,0)+I85+I112)'),
+        # row 123
+        ('I123:AC123', '=IF($B$116=lookup!$X$4,IF($D$10=1,0,I83)+I87,IF($D$10=1,0,I83)+I88)'),
+        # row 124
+        ('I124:AC124', '=IF($B$116=lookup!$X$4,I81+I112,I83+I85+I88+I112)'),
+        # row 125
+        ('I125:AC125', '=SUM(I122:I123)-I124'),
+        # row 126
+        ('A126', '=Ext_Debt_Data!A130'),
+        # row 127
+        ('A127', '=++OFFSET(translation!C604,0,LANG)'),
+        # row 128
+        ('A128:A130', '=++OFFSET(translation!C583,0,LANG)'),
+        ('I128:AC128', '=IF(I123=0, "",IF($B$116=lookup!$X$4,(IF($D$10=1, 0, I83*I10)+SUMPRODUCT(I16:I18, I89:I91)+SUMPRODUCT(I20:I22, I93:I95))/I123*100,(IF($D$10=1, 0, I83*I10)+SUMPRODUCT(I16:I18, I89:I91))/I123*100))'),
+        # row 129
+        ('D129', '=++OFFSET(translation!C978,0,LANG)'),
+        ('I129:AC129', "=+'Macro-Debt_Data'!U109"),
+        # row 130
+        ('C130', '=+D130'),
+        ('D130:D132 D137', '=IF(SUM(I130:S130)=0, 0, AVERAGE(I130:S130))'),
+        ('I130:AC130 I137:AC137', '=IF(ISNUMBER(I128), I128-I129, "")'),
+        # row 131
+        ('A131:A132', '=Ext_Debt_Data!A132'),
+        ('C131', '=ROUNDDOWN(+D131,0)'),
+        ('I131:AC131', '=IF(I123=0,"",IF($B$116=lookup!$X$4,(IF($D$10=1,0,I83*$C$10)+SUMPRODUCT($C$16:$C$18,I89:I91)+SUMPRODUCT($C$20:$C$22,I93:I95))/I123,(IF($D$10=1,0,I83*$C$10)+SUMPRODUCT($C$16:$C$18,I89:I91))/I123))'),
+        # row 132
+        ('C132', '=MAX(ROUNDDOWN(D132,0),C131+1)'),
+        ('I132:AC132', '=IF(I123=0, "",IF($B$116=lookup!$X$4,(IF($D$10=1,0,I83*$D$10)+SUMPRODUCT($D$16:$D$18,I89:I91)+SUMPRODUCT($D$20:$D$22,I93:I95))/I123,(IF($D$10=1,0,I83*$D$10)+SUMPRODUCT($D$16:$D$18,I89:I91))/I123))'),
+        # row 135
+        ('A135:A137 I136:AC136', '=A128'),
+        ('I135:AC135', '=IF(I122=0,"",IF($B$116=lookup!$X$4,(IF($D$10=1,I83*I10,0)+SUMPRODUCT(I12:I13,I85:I86))/I122*100,(IF($D$10=1,I83*I10,0)+SUMPRODUCT(I12,I85))/I122*100))'),
+        # row 137
+        ('C137', '=D137'),
+        # row 139: Debt service from OLD debt
+        ('H139:AC140', '=H142+H150'),
+        # row 140
+        ('A140', '="("&B116&")"'),
+        # row 142: Interest payment on OLD debt
+        ('H142:AC142', '=SUM(H144:H148)'),
+        # row 143
+        ('A143', '=A140'),
+        ('H143:AC143 H151:AC151 H161:AC161 I174:AC174 I185:AC185', '=IF($B$116=lookup!$X$4,H144+H145,H144)'),
+        # row 144
+        ('A144:A145', '=lookup!AP14&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$10, "")'),
+        ('H144:AC144', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W141), 'Input 3 - Macro-Debt data(DMX)'!W141, 0)"),
+        # row 145
+        ('H145:AC145', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W142), 'Input 3 - Macro-Debt data(DMX)'!W142*H219, 0)"),
+        # row 147
+        ('A147:A148', '=lookup!AP14&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('H147:AC147', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W166),'Input 3 - Macro-Debt data(DMX)'!W166, 0)"),
+        # row 148
+        ('H148:AC148', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W167),'Input 3 - Macro-Debt data(DMX)'!W167*H219, 0)"),
+        # row 150: Principal payment on OLD debt
+        ('H150:AC150 H160:AC160', '=H152+H153+H156+H157'),
+        ('AG150', '="Outstanding as of "&H5'),
+        # row 151
+        ('A151', '=A143'),
+        # row 152
+        ('A152:A153', '=lookup!AP16&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$10, "")'),
+        ('H152:AC152', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W143),'Input 3 - Macro-Debt data(DMX)'!W143, 0)"),
+        ('AE152 AE156', '=SUM(I152:AC152)'),
+        ('AG152 AG156', '=H162'),
+        ('AI152:AI153 AI156:AI157', '=AG152-AE152'),
+        # row 153
+        ('H153:AC153', '=H154*H219'),
+        ('AE153 AE157', '=SUM(I154:AC154)'),
+        ('AG153 AG157', '=H164'),
+        # row 154: (hide) in USD
+        ('H154:AC154', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W144),'Input 3 - Macro-Debt data(DMX)'!W144, 0)"),
+        # row 155
+        ('H155:AC155', '=H152/H219'),
+        # row 156
+        ('A156:A157', '=lookup!AP16&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('H156:AC156', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W168),'Input 3 - Macro-Debt data(DMX)'!W168, 0)"),
+        # row 157
+        ('H157:AC157', '=H158*H219'),
+        # row 158
+        ('A158 A164 A168', '=$A$154'),
+        ('H158:AC158', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W169),'Input 3 - Macro-Debt data(DMX)'!W169, 0)"),
+        # row 159
+        ('H159:AC159', '=H156/H219'),
+        # row 161
+        ('A161 A171', '=A151'),
+        # row 162
+        ('A162:A163', '=lookup!AP18&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$10, "")'),
+        ('H162', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W136), 'Input 3 - Macro-Debt data(DMX)'!W136,0)"),
+        ('I162:AC162 I164:AC164 I166:AC166 I168:AC168', '=H162-I152'),
+        # row 163
+        ('H163:AC163', '=H164*H220'),
+        # row 164
+        ('H164', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W138),'Input 3 - Macro-Debt data(DMX)'!W138,0)"),
+        # row 166
+        ('A166:A167', '=lookup!AP18&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('H166 H168', "=IF(ISNUMBER('Input 3 - Macro-Debt data(DMX)'!W161),'Input 3 - Macro-Debt data(DMX)'!W161, 0)"),
+        # row 167
+        ('H167:AC167', '=H168*H220'),
+        # row 169
+        ('H169', '=SUM(AI152:AI157)'),
+        # row 170: Debt services from NEW debt
+        ('I170:AC171', '=I173+I184'),
+        # row 173: Interest payment on NEW debt
+        ('I173:AC173 I184:AC184', '=I175+I176+I179+I181'),
+        # row 175
+        ('A175:A176', '=lookup!AP20&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$10, "")'),
+        ('I175:AC175', '=SUM(BA230:BA250,BA254:BA274,BA327:BA392,BA302:BA322)'),
+        # row 176
+        ('I176:AC176', '=SUM(BA278:BA298,BA397:BA463)*I219'),
+        # row 177
+        ('A177', '=lookup!$AP$22'),
+        ('I177:AC177', '=SUM(BA278:BA298)*I219'),
+        # row 179
+        ('A179', '=lookup!AP20&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('I179:AC179', '=SUM(BA468:BA488,BA517:BA581)'),
+        # row 180
+        ('A180 A182 A188 A191 A193 A201 A204 A206', '=$A$177'),
+        ('I180:AC180', '=SUM(BA468:BA488)'),
+        # row 181
+        ('A181', '=lookup!AP21&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('I181:AC181', '=SUM(BA492:BA512,BA587:BA651)*I219'),
+        # row 182
+        ('I182:AC182', '=SUM(BA492:BA512)*I219'),
+        # row 185
+        ('A185', '=A174'),
+        # row 186
+        ('A186:A187', '=lookup!AP23&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$10, "")'),
+        ('I186:AC186', '=SUM(AE230:AE250,AE254:AE274,AE327:AE392,AE302:AE322)'),
+        # row 187
+        ('I187:AC187', '=SUM(AE278:AE298,AE397:AE461)*I219'),
+        # row 188
+        ('I188:AC188', '=SUM(AE278:AE298)*I219'),
+        # row 190
+        ('A190', '=lookup!AP23&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('I190:AC190', '=SUM(AE468:AE488,AE517:AE581)'),
+        # row 191
+        ('I191:AC191', '=SUM(AE468:AE488)'),
+        # row 192
+        ('A192', '=lookup!AP24&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('I192:AC192', '=SUM(AE492:AE512,AE587:AE651)*I219'),
+        # row 193
+        ('I193:AC193', '=SUM(AE492:AE512)*I219'),
+        # row 195: Outstanding of NEW debt
+        ('I195:AC195', '=I199+I200+I203+I205'),
+        # row 196: (% of GDP)
+        ('I196:AC196', '=I195/I218*100'),
+        # row 197
+        ('A197 A209', '=A185'),
+        ('I197:AC197', '=IF($B$116=lookup!$X$4,I199+I200,I199)'),
+        # row 198
+        ('A198 A230', '=A196'),
+        ('I198:AC198', '=I197/I218*100'),
+        # row 199
+        ('A199:A200', '=lookup!AP26&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$10, "")'),
+        ('I199:AC199', '=SUM(I230:I274,I302:I322,I327:I391)'),
+        # row 200
+        ('I200:AC200', '=SUM(I278:I298,I397:I461)*I220'),
+        # row 201
+        ('I201:AC201', '=I86'),
+        # row 203
+        ('A203', '=lookup!AP26&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('I203:AC203', '=SUM(I468:I488,I517:I581)'),
+        # row 204
+        ('I204:AC204', '=I100'),
+        # row 205
+        ('A205', '=lookup!AP27&" "&IF(\'Input 1 - Basics\'!$C$33=lookup!$X$4, lookup!$AP$11, lookup!$AP$12)'),
+        ('I205:AC205', '=SUM(I492:I512,I587:I651)*I220'),
+        # row 206
+        ('I206:AC206', '=I101'),
+        # row 210: Outstanding stock
+        ('I210:AC210', '=I197+I161'),
+        # row 211: (% of GDP)
+        ('I211:AC211', '=I210/I218*100'),
+        # row 212: MLT
+        ('I212:AC212', '=I210-I213'),
+        # row 213: Short-term
+        ('I213:AC213', '=IF($B$116=lookup!$X$4,IF($D$10=1,I83,0)+I84+I112,IF($D$10=1,I83,0)+I85+I112)'),
+        # row 214: Interest payment
+        ('I214:AC214', '=I143+I174'),
+        # row 215: Principal payment
+        ('I215:AC215', '=I151+I185'),
+        # row 218: Nominal GDP in LCU
+        ('H218:AC218', "='Macro-Debt_Data'!T56*'Macro-Debt_Data'!T60"),
+        # row 219: Nominal Exchange Rate -- average (LCU/USD)
+        ('H219:AC219', "='Macro-Debt_Data'!T60"),
+        # row 220: Nominal Exchange Rate -- end of period (LCU/USD)
+        ('H220:AC220', "='Macro-Debt_Data'!T59"),
+        # row 222: Debt dynamics calculations per debt types
+        ('I222', '=I5'),
+        ('AE222 BA222', '=I222'),
+        # row 226
+        ('A226', '=A79'),
+        # row 227
+        ('A227', '=A84'),
+        # row 228: Calculations in LCU
+        ('A228', '=A83'),
+        # row 230
+        ('B230 B254 B278 B327 B349 B371 B397 B419 B441 B468 B492 B517 B539 B561 B587 B609 B631', '=$I$5'),
+        ('C230', '=$C10'),
+        ('D230', '=$D10'),
+        ('E230:E250', '=INDEX($A$5:$AC$22,MATCH(A$228,$A$5:$A$22,0),MATCH(B230,$A$5:$AC$5,0))'),
+        ('I230 J231 K232 L233 M234 N235 O236 P237 Q238 R239 S240 T241 U242 V243 W244 X245 Y246 Z247 AA248 AB249 AC250', '=I$83'),
+        ('J230:AC230 K231:AC231 L232:AC232 M233:AC233 N234:AC234 O235:AC235 P236:AC236 Q237:AC237 R238:AC238 S239:AC239 T240:AC240 U241:AC241 V242:AC242 W243:AC243 X244:AC244 Y245:AC245 Z246:AC246 AA247:AC247 AB248:AC248 AC249 J254:AC254 K255:AC255 L256:AC256 M257:AC257 N258:AC258 O259:AC259 P260:AC260 Q261:AC261 R262:AC262 S263:AC263 T264:AC264 U265:AC265 V266:AC266 W267:AC267 X268:AC268 Y269:AC269 Z270:AC270 AA271:AC271 AB272:AC272 AC273 J278:AC278 K279:AC279 L280:AC280 M281:AC281 N282:AC282 O283:AC283 P284:AC284 Q285:AC285 R286:AC286 S287:AC287 T288:AC288 U289:AC289 V290:AC290 W291:AC291 X292:AC292 Y293:AC293 Z294:AC294 AA295:AC295 AB296:AC296 AC297 J302:AC302 K303:AC303 L304:AC304 M305:AC305 N306:AC306 O307:AC307 P308:AC308 Q309:AC309 R310:AC310 S311:AC311 T312:AC312 U313:AC313 V314:AC314 W315:AC315 X316:AC316 Y317:AC317 Z318:AC318 AA319:AC319 AB320:AC320 AC321 J327:AC327 K328:AC328 L329:AC329 M330:AC330 N331:AC331 O332:AC332 P333:AC333 Q334:AC334 R335:AC335 S336:AC336 T337:AC337 U338:AC338 V339:AC339 W340:AC340 X341:AC341 Y342:AC342 Z343:AC343 AA344:AC344 AB345:AC345 AC346 J349:AC349 K350:AC350 L351:AC351 M352:AC352 N353:AC353 O354:AC354 P355:AC355 Q356:AC356 R357:AC357 S358:AC358 T359:AC359 U360:AC360 V361:AC361 W362:AC362 X363:AC363 Y364:AC364 Z365:AC365 AA366:AC366 AB367:AC367 AC368 J371:AC371 K372:AC372 L373:AC373 M374:AC374 N375:AC375 O376:AC376 P377:AC377 Q378:AC378 R379:AC379 S380:AC380 T381:AC381 U382:AC382 V383:AC383 W384:AC384 X385:AC385 Y386:AC386 Z387:AC387 AA388:AC388 AB389:AC389 AC390 J397:AC397 K398:AC398 L399:AC399 M400:AC400 N401:AC401 O402:AC402 P403:AC403 Q404:AC404 R405:AC405 S406:AC406 T407:AC407 U408:AC408 V409:AC409 W410:AC410 X411:AC411 Y412:AC412 Z413:AC413 AA414:AC414 AB415:AC415 AC416 J419:AC419 K420:AC420 L421:AC421 M422:AC422 N423:AC423 O424:AC424 P425:AC425 Q426:AC426 R427:AC427 S428:AC428 T429:AC429 U430:AC430 V431:AC431 W432:AC432 X433:AC433 Y434:AC434 Z435:AC435 AA436:AC436 AB437:AC437 AC438 J441:AC441 K442:AC442 L443:AC443 M444:AC444 N445:AC445 O446:AC446 P447:AC447 Q448:AC448 R449:AC449 S450:AC450 T451:AC451 U452:AC452 V453:AC453 W454:AC454 X455:AC455 Y456:AC456 Z457:AC457 AA458:AC458 AB459:AC459 AC460 J468:AC468 K469:AC469 L470:AC470 M471:AC471 N472:AC472 O473:AC473 P474:AC474 Q475:AC475 R476:AC476 S477:AC477 T478:AC478 U479:AC479 V480:AC480 W481:AC481 X482:AC482 Y483:AC483 Z484:AC484 AA485:AC485 AB486:AC486 AC487 J492:AC492 K493:AC493 L494:AC494 M495:AC495 N496:AC496 O497:AC497 P498:AC498 Q499:AC499 R500:AC500 S501:AC501 T502:AC502 U503:AC503 V504:AC504 W505:AC505 X506:AC506 Y507:AC507 Z508:AC508 AA509:AC509 AB510:AC510 AC511 J517:AC517 K518:AC518 L519:AC519 M520:AC520 N521:AC521 O522:AC522 P523:AC523 Q524:AC524 R525:AC525 S526:AC526 T527:AC527 U528:AC528 V529:AC529 W530:AC530 X531:AC531 Y532:AC532 Z533:AC533 AA534:AC534 AB535:AC535 AC536 J539:AC539 K540:AC540 L541:AC541 M542:AC542 N543:AC543 O544:AC544 P545:AC545 Q546:AC546 R547:AC547 S548:AC548 T549:AC549 U550:AC550 V551:AC551 W552:AC552 X553:AC553 Y554:AC554 Z555:AC555 AA556:AC556 AB557:AC557 AC558 J561:AC561 K562:AC562 L563:AC563 M564:AC564 N565:AC565 O566:AC566 P567:AC567 Q568:AC568 R569:AC569 S570:AC570 T571:AC571 U572:AC572 V573:AC573 W574:AC574 X575:AC575 Y576:AC576 Z577:AC577 AA578:AC578 AB579:AC579 AC580 J587:AC587 K588:AC588 L589:AC589 M590:AC590 N591:AC591 O592:AC592 P593:AC593 Q594:AC594 R595:AC595 S596:AC596 T597:AC597 U598:AC598 V599:AC599 W600:AC600 X601:AC601 Y602:AC602 Z603:AC603 AA604:AC604 AB605:AC605 AC606 J609:AC609 K610:AC610 L611:AC611 M612:AC612 N613:AC613 O614:AC614 P615:AC615 Q616:AC616 R617:AC617 S618:AC618 T619:AC619 U620:AC620 V621:AC621 W622:AC622 X623:AC623 Y624:AC624 Z625:AC625 AA626:AC626 AB627:AC627 AC628 J631:AC631 K632:AC632 L633:AC633 M634:AC634 N635:AC635 O636:AC636 P637:AC637 Q638:AC638 R639:AC639 S640:AC640 T641:AC641 U642:AC642 V643:AC643 W644:AC644 X645:AC645 Y646:AC646 Z647:AC647 AA648:AC648 AB649:AC649 AC650', '=I230-AF230'),
+        ('AE230:AY230 AE327:AY327 AE349:AY349 AE371:AY371 AE397:AX397 AE419:AX419 AE441:AX441 AE517:AY517 AE539:AY539 AE561:AY561', '=IF(AND(AE$222>$B230+$C230,AE$222<=$B230+$D230),$I230/($D230-$C230),0)'),
+        ('BA230:BU230 BB231:BU231 BC232:BU232 BD233:BU233 BE234:BU234 BF235:BU235 BG236:BU236 BH237:BU237 BI238:BU238 BJ239:BU239 BK240:BU240 BL241:BU241 BM242:BU242 BN243:BU243 BO244:BU244 BP245:BU245 BQ246:BU246 BR247:BU247 BS248:BU248 BT249:BU249 BU250 BA254:BU254 BB255:BU255 BC256:BU256 BD257:BU257 BE258:BU258 BF259:BU259 BG260:BU260 BH261:BU261 BI262:BU262 BJ263:BU263 BK264:BU264 BL265:BU265 BM266:BU266 BN267:BU267 BO268:BU268 BP269:BU269 BQ270:BU270 BR271:BU271 BS272:BU272 BT273:BU273 BU274 BA278:BU278 BB279:BU279 BC280:BU280 BD281:BU281 BE282:BU282 BF283:BU283 BG284:BU284 BH285:BU285 BI286:BU286 BJ287:BU287 BK288:BU288 BL289:BU289 BM290:BU290 BN291:BU291 BO292:BU292 BP293:BU293 BQ294:BU294 BR295:BU295 BS296:BU296 BT297:BU297 BU298 BA302:BU302 BB303:BU303 BC304:BU304 BD305:BU305 BE306:BU306 BF307:BU307 BG308:BU308 BH309:BU309 BI310:BU310 BJ311:BU311 BK312:BU312 BL313:BU313 BM314:BU314 BN315:BU315 BO316:BU316 BP317:BU317 BQ318:BU318 BR319:BU319 BS320:BU320 BT321:BU321 BU322 BA327:BU327 BB328:BU328 BC329:BU329 BD330:BU330 BE331:BU331 BF332:BU332 BG333:BU333 BH334:BU334 BI335:BU335 BJ336:BU336 BK337:BU337 BL338:BU338 BM339:BU339 BN340:BU340 BO341:BU341 BP342:BU342 BQ343:BU343 BR344:BU344 BS345:BU345 BT346:BU346 BU347 BA349:BU349 BB350:BU350 BC351:BU351 BD352:BU352 BE353:BU353 BF354:BU354 BG355:BU355 BH356:BU356 BI357:BU357 BJ358:BU358 BK359:BU359 BL360:BU360 BM361:BU361 BN362:BU362 BO363:BU363 BP364:BU364 BQ365:BU365 BR366:BU366 BS367:BU367 BT368:BU368 BU369 BA371:BU371 BB372:BU372 BC373:BU373 BD374:BU374 BE375:BU375 BF376:BU376 BG377:BU377 BH378:BU378 BI379:BU379 BJ380:BU380 BK381:BU381 BL382:BU382 BM383:BU383 BN384:BU384 BO385:BU385 BP386:BU386 BQ387:BU387 BR388:BU388 BS389:BU389 BT390:BU390 BU391 BA397:BU397 BB398:BU398 BC399:BU399 BD400:BU400 BE401:BU401 BF402:BU402 BG403:BU403 BH404:BU404 BI405:BU405 BJ406:BU406 BK407:BU407 BL408:BU408 BM409:BU409 BN410:BU410 BO411:BU411 BP412:BU412 BQ413:BU413 BR414:BU414 BS415:BU415 BT416:BU416 BU417 BA419:BU419 BB420:BU420 BC421:BU421 BD422:BU422 BE423:BU423 BF424:BU424 BG425:BU425 BH426:BU426 BI427:BU427 BJ428:BU428 BK429:BU429 BL430:BU430 BM431:BU431 BN432:BU432 BO433:BU433 BP434:BU434 BQ435:BU435 BR436:BU436 BS437:BU437 BT438:BU438 BU439 BA441:BU441 BB442:BU442 BC443:BU443 BD444:BU444 BE445:BU445 BF446:BU446 BG447:BU447 BH448:BU448 BI449:BU449 BJ450:BU450 BK451:BU451 BL452:BU452 BM453:BU453 BN454:BU454 BO455:BU455 BP456:BU456 BQ457:BU457 BR458:BU458 BS459:BU459 BT460:BU460 BU461', '=IF(BA$222=$B230,0,(H230*$E230))'),
+        # row 231
+        ('A231:A250 C231:D250 C255:D274 C279:D298 A328:A347 C328:D347 A350:A369 C350:D369 A372:A391 C372:D391 A398:A417 C398:D417 A420:A439 C420:D439 A442:A461 C442:D461 C469:D488 C493:D512 A518:A537 C518:D537 A540:A559 C540:D559 A562:A581 C562:D581 A588:A607 C588:D607 A610:A629 C610:D629 A632:A651 C632:D651', '=A230'),
+        ('B231:B250 B255:B274 B279:B298 B328:B347 B350:B369 B372:B391 B398:B417 B420:B439 B442:B461 B469:B488 B493:B512 B518:B537 B540:B559 B562:B581 B588:B607 B610:B629 B632:B651', '=B230+1'),
+        ('AF231:AY231 AF328:AY328 AF350:AY350 AF372:AY372 AF398:AX398 AF420:AX420 AF442:AX442 AF518:AY518 AF540:AY540 AF562:AY562', '=IF(AND(AF$222>$B231+$C231,AF$222<=$B231+$D231),$J231/($D231-$C231),0)'),
+        # row 232
+        ('AG232:AY232 AG329:AY329 AG351:AY351 AG373:AY373 AG399:AX399 AG421:AX421 AG443:AX443 AG519:AY519 AG541:AY541 AG563:AY563', '=IF(AND(AG$222>$B232+$C232,AG$222<=$B232+$D232),$K232/($D232-$C232),0)'),
+        # row 233
+        ('AH233:AY233 AH330:AY330 AH352:AY352 AH374:AY374 AH400:AX400 AH422:AX422 AH444:AX444 AH520:AY520 AH542:AY542 AH564:AY564', '=IF(AND(AH$222>$B233+$C233,AH$222<=$B233+$D233),$L233/($D233-$C233),0)'),
+        # row 234
+        ('AI234:AY234 AI331:AY331 AI353:AY353 AI375:AY375 AI401:AX401 AI423:AX423 AI445:AX445 AI521:AY521 AI543:AY543 AI565:AY565', '=IF(AND(AI$222>$B234+$C234,AI$222<=$B234+$D234),$M234/($D234-$C234),0)'),
+        # row 235
+        ('AJ235:AY235 AJ332:AY332 AJ354:AY354 AJ376:AY376 AJ402:AX402 AJ424:AX424 AJ446:AX446 AJ522:AY522 AJ544:AY544 AJ566:AY566', '=IF(AND(AJ$222>$B235+$C235,AJ$222<=$B235+$D235),$N235/($D235-$C235),0)'),
+        # row 236
+        ('AK236:AY236 AK333:AY333 AK355:AY355 AK377:AY377 AK403:AX403 AK425:AX425 AK447:AX447 AK523:AY523 AK545:AY545 AK567:AY567', '=IF(AND(AK$222>$B236+$C236,AK$222<=$B236+$D236),$O236/($D236-$C236),0)'),
+        # row 237
+        ('AL237:AY237 AL334:AY334 AL356:AY356 AL378:AY378 AL404:AX404 AL426:AX426 AL448:AX448 AL524:AY524 AL546:AY546 AL568:AY568', '=IF(AND(AL$222>$B237+$C237,AL$222<=$B237+$D237),$P237/($D237-$C237),0)'),
+        # row 238
+        ('AM238:AY238 AM335:AY335 AM357:AY357 AM379:AY379 AM405:AX405 AM427:AX427 AM449:AX449 AM525:AY525 AM547:AY547 AM569:AY569', '=IF(AND(AM$222>$B238+$C238,AM$222<=$B238+$D238),$Q238/($D238-$C238),0)'),
+        # row 239
+        ('AN239:AY239 AN336:AY336 AN358:AY358 AN380:AY380 AN406:AX406 AN428:AX428 AN450:AX450 AN526:AY526 AN548:AY548 AN570:AY570', '=IF(AND(AN$222>$B239+$C239,AN$222<=$B239+$D239),$R239/($D239-$C239),0)'),
+        # row 240
+        ('AO240:AY240 AO337:AY337 AO359:AY359 AO381:AY381 AO407:AX407 AO429:AX429 AO451:AX451 AO527:AY527 AO549:AY549 AO571:AY571', '=IF(AND(AO$222>$B240+$C240,AO$222<=$B240+$D240),$S240/($D240-$C240),0)'),
+        # row 241
+        ('AP241:AY241 AP338:AY338 AP360:AY360 AP382:AY382 AP408:AX408 AP430:AX430 AP452:AX452 AP528:AY528 AP550:AY550 AP572:AY572', '=IF(AND(AP$222>$B241+$C241,AP$222<=$B241+$D241),$T241/($D241-$C241),0)'),
+        # row 242
+        ('AQ242:AY242 AQ339:AY339 AQ361:AY361 AQ383:AY383 AQ409:AX409 AQ431:AX431 AQ453:AX453 AQ529:AY529 AQ551:AY551 AQ573:AY573', '=IF(AND(AQ$222>$B242+$C242,AQ$222<=$B242+$D242),$U242/($D242-$C242),0)'),
+        # row 243
+        ('AR243:AY243 AR340:AY340 AR362:AY362 AR384:AY384 AR410:AX410 AR432:AX432 AR454:AX454 AR530:AY530 AR552:AY552 AR574:AY574', '=IF(AND(AR$222>$B243+$C243,AR$222<=$B243+$D243),$V243/($D243-$C243),0)'),
+        # row 244
+        ('AS244:AY244 AS341:AY341 AS363:AY363 AS385:AY385 AS411:AX411 AS433:AX433 AS455:AX455 AS531:AY531 AS553:AY553 AS575:AY575', '=IF(AND(AS$222>$B244+$C244,AS$222<=$B244+$D244),$W244/($D244-$C244),0)'),
+        # row 245
+        ('AT245:AY245 AT342:AY342 AT364:AY364 AT386:AY386 AT412:AX412 AT434:AX434 AT456:AX456 AT532:AY532 AT554:AY554 AT576:AY576', '=IF(AND(AT$222>$B245+$C245,AT$222<=$B245+$D245),$X245/($D245-$C245),0)'),
+        # row 246
+        ('AU246:AY246 AU343:AY343 AU365:AY365 AU387:AY387 AU413:AX413 AU435:AX435 AU457:AX457 AU533:AY533 AU555:AY555 AU577:AY577', '=IF(AND(AU$222>$B246+$C246,AU$222<=$B246+$D246),$Y246/($D246-$C246),0)'),
+        # row 247
+        ('AV247:AY247 AV344:AY344 AV366:AY366 AV388:AY388 AV414:AX414 AV436:AX436 AV458:AX458 AV534:AY534 AV556:AY556 AV578:AY578', '=IF(AND(AV$222>$B247+$C247,AV$222<=$B247+$D247),$Z247/($D247-$C247),0)'),
+        # row 248
+        ('AW248:AY248 AW345:AY345 AW367:AY367 AW389:AY389 AW415:AX415 AW437:AX437 AW459:AX459 AW535:AY535 AW557:AY557 AW579:AY579', '=IF(AND(AW$222>$B248+$C248,AW$222<=$B248+$D248),$AA248/($D248-$C248),0)'),
+        # row 249
+        ('AX249:AY249 AX346:AY346 AX368:AY368 AX390:AY390 AX416 AX438 AX460 AX536:AY536 AX558:AY558 AX580:AY580', '=IF(AND(AX$222>$B249+$C249,AX$222<=$B249+$D249),$AB249/($D249-$C249),0)'),
+        # row 250
+        ('AY250 AY347 AY369 AY391 AY537 AY559 AY581', '=IF(AND(AY$222>$B250+$C250,AY$222<=$B250+$D250),$AC250/($D250-$C250),0)'),
+        # row 252: Calculations in LCU
+        ('A252', '=A85'),
+        # row 254
+        ('C254', '=$C12'),
+        ('D254', '=$D12'),
+        ('E254:E274', '=INDEX($A$5:$AC$22,MATCH(A$252,$A$5:$A$22,0),MATCH(B254,$A$5:$AC$5,0))'),
+        ('I254 J255 K256 L257 M258 N259 O260 P261 Q262 R263 S264 T265 U266 V267 W268 X269 Y270 Z271 AA272 AB273 AC274', '=I$85'),
+        ('AF254 AG255 AH256 AI257 AJ258:AY258 AK259:AY259 AL260:AY260 AM261:AY261 AN262:AY262 AO263:AY263 AP264:AY264 AQ265:AY265 AR266:AY266 AS267:AY267 AT268:AY268 AU269:AY269 AV270:AY270 AW271:AY271 AX272:AY272 AY273:AY274 AF278 AG279 AH280 AI281 AJ282 AK283 AK284:AL284 AL285:AM285 AM286:AN286 AN287:AO287 AO288:AP288 AP289:AQ289 AQ290:AR290 AR291:AS291 AS292:AT292 AT293:AU293 AU294:AV294 AV295:AW295 AW296:AX296 AX297:AY297 AY298 AF302 AG303 AH304 AI305 AJ306:AY306 AK307:AY307 AL308:AY308 AM309:AY309 AN310:AY310 AO311:AY311 AP312:AY312 AQ313:AY313 AR314:AY314 AS315:AY315 AT316:AY316 AU317:AY317 AV318:AY318 AW319:AY319 AX320:AY320 AY321:AY322 AF468 AG469 AH470 AI471 AJ472:AY472 AK473:AY473 AL474:AY474 AM475:AY475 AN476:AY476 AO477:AY477 AP478:AY478 AQ479:AY479 AR480:AY480 AS481:AY481 AT482:AY482 AU483:AY483 AV484:AY484 AW485:AY485 AX486:AY486 AY487:AY488 AF492 AG493 AH494 AI495 AJ496 AK497 AK498:AL498 AL499:AM499 AM500:AN500 AN501:AO501 AO502:AP502 AP503:AQ503 AQ504:AR504 AR505:AS505 AS506:AT506 AT507:AU507 AU508:AV508 AV509:AW509 AW510:AX510 AX511:AY511 AY512', '=I254'),
+        # row 276: Calculations in USD
+        ('A276', '=A86'),
+        # row 278
+        ('C278', '=$C13'),
+        ('D278', '=$D13'),
+        ('E278:E298', '=INDEX($A$5:$AC$22,MATCH(A$276,$A$5:$A$22,0),MATCH(B278,$A$5:$AC$5,0))'),
+        ('I278', '=$I$86/I$219'),
+        # row 279
+        ('J279', '=$J$86/J$219'),
+        # row 280
+        ('K280', '=$K$86/K$219'),
+        # row 281
+        ('L281', '=$L$86/L$219'),
+        # row 282
+        ('M282', '=$M$86/M$219'),
+        # row 283
+        ('N283 O284 P285 Q286 R287 S288 T289 U290 V291 W292 X293 Y294 Z295 AA296 AB297 AC298', '=N$86/N$219'),
+        # row 302
+        ('B302:E322', '=B254'),
+        ('I302', '=$I$112'),
+        # row 303
+        ('J303', '=$J$112'),
+        # row 304
+        ('K304', '=$K$112'),
+        # row 305
+        ('L305', '=$L$112'),
+        # row 306
+        ('M306', '=$M$112'),
+        # row 307
+        ('N307', '=$N$112'),
+        # row 308
+        ('O308', '=$O$112'),
+        # row 309
+        ('P309', '=$P$112'),
+        # row 310
+        ('Q310', '=$Q$112'),
+        # row 311
+        ('R311', '=$R$112'),
+        # row 312
+        ('S312', '=$S$112'),
+        # row 313
+        ('T313', '=$T$112'),
+        # row 314
+        ('U314', '=$U$112'),
+        # row 315
+        ('V315', '=$V$112'),
+        # row 316
+        ('W316', '=$W$112'),
+        # row 317
+        ('X317', '=$X$112'),
+        # row 318
+        ('Y318', '=$Y$112'),
+        # row 319
+        ('Z319', '=$Z$112'),
+        # row 320
+        ('AA320', '=$AA$112'),
+        # row 321
+        ('AB321', '=$AB$112'),
+        # row 322
+        ('AC322', '=$AC$112'),
+        # row 324
+        ('A324:A325', '=A87'),
+        # row 327
+        ('A327', '=A89'),
+        ('C327', '=$C16'),
+        ('D327', '=$D16'),
+        ('E327:E347 E349:E369 E371:E391 E397:E417 E419:E439 E441:E461', '=INDEX($A$5:$AC$22,MATCH(A327,$A$5:$A$22,0),MATCH(B327,$A$5:$AC$5,0))'),
+        ('I327 J328 K329 L330 M331 N332 O333 P334 Q335 R336 S337 T338 U339 V340 W341 X342 Y343 Z344 AA345 AB346 AC347', '=I$89'),
+        # row 349
+        ('A349', '=A90'),
+        ('C349', '=$C17'),
+        ('D349', '=$D17'),
+        ('I349 J350 K351 L352 M353 N354 O355 P356 Q357 R358 S359 T360 U361 V362 W363 X364 Y365 Z366 AA367 AB368 AC369', '=I$90'),
+        # row 371
+        ('A371', '=A91'),
+        ('C371', '=$C18'),
+        ('D371', '=$D18'),
+        ('I371 J372 K373 L374 M375 N376 O377 P378 Q379 R380 S381 T382 U383 V384 W385 X386 Y387 Z388 AA389 AB390 AC391', '=I$91'),
+        # row 395: Calculations in USD
+        ('A395', '=A92'),
+        # row 397
+        ('A397', '=A93'),
+        ('C397', '=$C20'),
+        ('D397', '=$D20'),
+        ('I397 J398 K399 L400 M401 N402 O403 P404 Q405 R406 S407 T408 U409 V410 W411 X412 Y413 Z414 AA415 AB416 AC417', '=I$93/I$219'),
+        ('AY397:AY417 AY419:AY439 AY441:AY461 AE587:AY587 AN595:AY595 AE609:AY609 AN617:AY617 AE631:AY631 AN639:AY639', '=IF(AND(AY$222>$B397+$C397,AY$222<=$B397+$D397), $I397/($D397-$C397),0)'),
+        # row 419
+        ('A419', '=A94'),
+        ('C419', '=$C21'),
+        ('D419', '=$D21'),
+        ('I419 J420 K421 L422 M423 N424 O425 P426 Q427 R428 S429 T430 U431 V432 W433 X434 Y435 Z436 AA437 AB438 AC439', '=I$94/I$219'),
+        # row 441
+        ('A441', '=A95'),
+        ('C441', '=$C22'),
+        ('D441', '=$D22'),
+        ('I441 J442 K443 L444 M445 N446 O447 P448 Q449 R450 S451 T452 U453 V454 W455 X456 Y457 Z458 AA459 AB460 AC461', '=I$95/I$219'),
+        # row 465
+        ('A465:A466', '=A26'),
+        # row 468
+        ('C468', '=$C27'),
+        ('D468', '=$D27'),
+        ('E468:E488', '=INDEX($A$26:$AC$37,MATCH(A$466,$A$26:$A$37,0),MATCH(B468,$A$5:$AC$5,0))'),
+        ('I468', '=$I$100'),
+        ('BA468:BU468 BB469:BU469 BC470:BU470 BD471:BU471 BE472:BU472 BF473:BU473 BG474:BU474 BH475:BU475 BI476:BU476 BJ477:BU477 BK478:BU478 BL479:BU479 BM480:BU480 BN481:BU481 BO482:BU482 BP483:BU483 BQ484:BU484 BR485:BU485 BS486:BU486 BT487:BU487 BU488 BA492:BU492 BB493:BU493 BC494:BU494 BD495:BU495 BE496:BU496 BF497:BU497 BG498:BU498 BH499:BU499 BI500:BU500 BJ501:BU501 BK502:BU502 BL503:BU503 BM504:BU504 BN505:BU505 BO506:BU506 BP507:BU507 BQ508:BU508 BR509:BU509 BS510:BU510 BT511:BU511 BU512 BA517:BU517 BB518:BU518 BC519:BU519 BD520:BU520 BE521:BU521 BF522:BU522 BG523:BU523 BH524:BU524 BI525:BU525 BJ526:BU526 BK527:BU527 BL528:BU528 BM529:BU529 BN530:BU530 BO531:BU531 BP532:BU532 BQ533:BU533 BR534:BU534 BS535:BU535 BT536:BU536 BU537 BA539:BU539 BB540:BU540 BC541:BU541 BD542:BU542 BE543:BU543 BF544:BU544 BG545:BU545 BH546:BU546 BI547:BU547 BJ548:BU548 BK549:BU549 BL550:BU550 BM551:BU551 BN552:BU552 BO553:BU553 BP554:BU554 BQ555:BU555 BR556:BU556 BS557:BU557 BT558:BU558 BU559 BA561:BU561 BB562:BU562 BC563:BU563 BD564:BU564 BE565:BU565 BF566:BU566 BG567:BU567 BH568:BU568 BI569:BU569 BJ570:BU570 BK571:BU571 BL572:BU572 BM573:BU573 BN574:BU574 BO575:BU575 BP576:BU576 BQ577:BU577 BR578:BU578 BS579:BU579 BT580:BU580 BU581 BA587:BU587 BB588:BU588 BC589:BU589 BD590:BU590 BE591:BU591 BF592:BU592 BG593:BU593 BH594:BU594 BI595:BU595 BJ596:BU596 BK597:BU597 BL598:BU598 BM599:BU599 BN600:BU600 BO601:BU601 BP602:BU602 BQ603:BU603 BR604:BU604 BS605:BU605 BT606:BU606 BU607 BA609:BU609 BB610:BU610 BC611:BU611 BD612:BU612 BE613:BU613 BF614:BU614 BG615:BU615 BH616:BU616 BI617:BU617 BJ618:BU618 BK619:BU619 BL620:BU620 BM621:BU621 BN622:BU622 BO623:BU623 BP624:BU624 BQ625:BU625 BR626:BU626 BS627:BU627 BT628:BU628 BU629 BA631:BU631 BB632:BU632 BC633:BU633 BD634:BU634 BE635:BU635 BF636:BU636 BG637:BU637 BH638:BU638 BI639:BU639 BJ640:BU640 BK641:BU641 BL642:BU642 BM643:BU643 BN644:BU644 BO645:BU645 BP646:BU646 BQ647:BU647 BR648:BU648 BS649:BU649 BT650:BU650 BU651', '=IF(BA$222=$B468,0,H468*$E468)'),
+        # row 469
+        ('J469', '=$J$100'),
+        # row 470
+        ('K470', '=$K$100'),
+        # row 471
+        ('L471', '=$L$100'),
+        # row 472
+        ('M472', '=$M$100'),
+        # row 473
+        ('N473', '=$N$100'),
+        # row 474
+        ('O474', '=$O$100'),
+        # row 475
+        ('P475', '=$P$100'),
+        # row 476
+        ('Q476', '=$Q$100'),
+        # row 477
+        ('R477', '=$R$100'),
+        # row 478
+        ('S478', '=$S$100'),
+        # row 479
+        ('T479', '=$T$100'),
+        # row 480
+        ('U480', '=$U$100'),
+        # row 481
+        ('V481', '=$V$100'),
+        # row 482
+        ('W482', '=$W$100'),
+        # row 483
+        ('X483', '=$X$100'),
+        # row 484
+        ('Y484', '=$Y$100'),
+        # row 485
+        ('Z485', '=$Z$100'),
+        # row 486
+        ('AA486', '=$AA$100'),
+        # row 487
+        ('AB487', '=$AB$100'),
+        # row 488
+        ('AC488', '=$AC$100'),
+        # row 490: Calculations in USD
+        ('A490', '=A28'),
+        # row 492
+        ('C492', '=$C28'),
+        ('D492', '=$D28'),
+        ('E492:E512', '=INDEX($A$26:$AC$37,MATCH(A$490,$A$26:$A$37,0),MATCH(B492,$A$5:$AC$5,0))'),
+        ('I492', '=$I$101/I$219'),
+        # row 493
+        ('J493', '=$J$101/J$219'),
+        # row 494
+        ('K494', '=$K$101/K$219'),
+        # row 495
+        ('L495', '=$L$101/L$219'),
+        # row 496
+        ('M496', '=$M$101/M$219'),
+        # row 497
+        ('N497 O498 P499 Q500 R501 S502 T503 U504 V505 W506 X507 Y508 Z509 AA510 AB511 AC512', '=N$101/N$219'),
+        # row 514
+        ('A514:A515', '=A29'),
+        # row 517
+        ('A517', '=A31'),
+        ('C517', '=$C31'),
+        ('D517', '=$D31'),
+        ('E517:E537 E539:E559 E561:E581 E587:E607 E609:E629 E631:E651', '=INDEX($A$26:$AC$37,MATCH(A517,$A$26:$A$37,0),MATCH(B517,$A$5:$AC$5,0))'),
+        ('I517 J518 K519 L520 M521 N522 O523 P524 Q525 R526 S527 T528 U529 V530 W531 X532 Y533 Z534 AA535 AB536 AC537', '=I$104'),
+        # row 539
+        ('A539', '=A32'),
+        ('C539', '=$C32'),
+        ('D539', '=$D32'),
+        ('I539 J540 K541 L542 M543 N544 O545 P546 Q547 R548 S549 T550 U551 V552 W553 X554 Y555 Z556 AA557 AB558 AC559', '=I$105'),
+        # row 561
+        ('A561', '=A33'),
+        ('C561', '=$C33'),
+        ('D561', '=$D33'),
+        ('I561 J562 K563 L564 M565 N566 O567 P568 Q569 R570 S571 T572 U573 V574 W575 X576 Y577 Z578 AA579 AB580 AC581', '=I$106'),
+        # row 585: Calculations in USD
+        ('A585', '=A34'),
+        # row 587
+        ('A587', '=A35'),
+        ('C587', '=$C35'),
+        ('D587', '=$D35'),
+        ('I587 J588 K589 L590 M591 N592 O593 P594 Q595 R596 S597 T598 U599 V600 W601 X602 Y603 Z604 AA605 AB606 AC607', '=I$108/I$219'),
+        # row 588
+        ('AF588:AY588 AF610:AY610 AF632:AY632', '=IF(AND(AF$222>$B588+$C588,AF$222<=$B588+$D588), $J588/($D588-$C588),0)'),
+        # row 589
+        ('AG589:AY589 AG611:AY611 AG633:AY633', '=IF(AND(AG$222>$B589+$C589,AG$222<=$B589+$D589), $K589/($D589-$C589),0)'),
+        # row 590
+        ('AH590:AY590 AH612:AY612 AH634:AY634', '=IF(AND(AH$222>$B590+$C590,AH$222<=$B590+$D590), $L590/($D590-$C590),0)'),
+        # row 591
+        ('AI591:AY591 AI613:AY613 AI635:AY635', '=IF(AND(AI$222>$B591+$C591,AI$222<=$B591+$D591), $M591/($D591-$C591),0)'),
+        # row 592
+        ('AJ592:AY592 AJ614:AY614 AJ636:AY636', '=IF(AND(AJ$222>$B592+$C592,AJ$222<=$B592+$D592), $N592/($D592-$C592),0)'),
+        # row 593
+        ('AK593:AY593 AK615:AY615 AK637:AY637', '=IF(AND(AK$222>$B593+$C593,AK$222<=$B593+$D593), $O593/($D593-$C593),0)'),
+        # row 594
+        ('AL594:AY594 AL616:AY616 AL638:AY638', '=IF(AND(AL$222>$B594+$C594,AL$222<=$B594+$D594), $P594/($D594-$C594),0)'),
+        # row 595
+        ('AM595 AM617 AM639', '=IF(AND(AM$222>$B595+$C595,AM$222<=$B595+$D595), $Q595/($D595-$C595),0)'),
+        # row 596
+        ('AN596:AY596 AN618:AY618 AN640:AY640', '=IF(AND(AN$222>$B596+$C596,AN$222<=$B596+$D596), $R596/($D596-$C596),0)'),
+        # row 597
+        ('AO597:AY597 AO619:AY619 AO641:AY641', '=IF(AND(AO$222>$B597+$C597,AO$222<=$B597+$D597), $S597/($D597-$C597),0)'),
+        # row 598
+        ('AP598:AY598 AP620:AY620 AP642:AY642', '=IF(AND(AP$222>$B598+$C598,AP$222<=$B598+$D598), $T598/($D598-$C598),0)'),
+        # row 599
+        ('AQ599:AY599 AQ621:AY621 AQ643:AY643', '=IF(AND(AQ$222>$B599+$C599,AQ$222<=$B599+$D599), $U599/($D599-$C599),0)'),
+        # row 600
+        ('AR600:AY600 AR622:AY622 AR644:AY644', '=IF(AND(AR$222>$B600+$C600,AR$222<=$B600+$D600), $V600/($D600-$C600),0)'),
+        # row 601
+        ('AS601:AY601 AS623:AY623 AS645:AY645', '=IF(AND(AS$222>$B601+$C601,AS$222<=$B601+$D601), $W601/($D601-$C601),0)'),
+        # row 602
+        ('AT602:AY602 AT624:AY624 AT646:AY646', '=IF(AND(AT$222>$B602+$C602,AT$222<=$B602+$D602), $X602/($D602-$C602),0)'),
+        # row 603
+        ('AU603:AY603 AU625:AY625 AU647:AY647', '=IF(AND(AU$222>$B603+$C603,AU$222<=$B603+$D603), $Y603/($D603-$C603),0)'),
+        # row 604
+        ('AV604:AY604 AV626:AY626 AV648:AY648', '=IF(AND(AV$222>$B604+$C604,AV$222<=$B604+$D604), $Z604/($D604-$C604),0)'),
+        # row 605
+        ('AW605:AY605 AW627:AY627 AW649:AY649', '=IF(AND(AW$222>$B605+$C605,AW$222<=$B605+$D605), $AA605/($D605-$C605),0)'),
+        # row 606
+        ('AX606:AY606 AX628:AY628 AX650:AY650', '=IF(AND(AX$222>$B606+$C606,AX$222<=$B606+$D606), $AB606/($D606-$C606),0)'),
+        # row 607
+        ('AY607 AY629 AY651', '=IF(AND(AY$222>$B607+$C607,AY$222<=$B607+$D607), $AC607/($D607-$C607),0)'),
+        # row 609
+        ('A609', '=A36'),
+        ('C609', '=$C36'),
+        ('D609', '=$D36'),
+        ('I609 J610 K611 L612 M613 N614 O615 P616 Q617 R618 S619 T620 U621 V622 W623 X624 Y625 Z626 AA627 AB628 AC629', '=I$109/I$219'),
+        # row 631
+        ('A631', '=A37'),
+        ('C631', '=$C37'),
+        ('D631', '=$D37'),
+        ('I631 J632 K633 L634 M635 N636 O637 P638 Q639 R640 S641 T642 U643 V644 W645 X646 Y647 Z648 AA649 AB650 AC651', '=I$110/I$219'),
+    ],
+}
+
+
+def compute(book, sheet):
+    """Fill every formula cell of `sheet` from the book's current values."""
+    evaluate(book, sheet, BLOCKS[sheet])

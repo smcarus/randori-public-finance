@@ -1,0 +1,76 @@
+# RPF-03 municipal credit scorecard (sovrisk/muni.py). DRAFT weights and thresholds for review.
+# Works for a city or town in any US state. Massachusetts practice is the gold standard for administration: the
+# governance factor scores each town against what MA requires or recommends (each `benchmark` names the MA rule),
+# whether or not the town's own state requires it. Economic and financial indicators use generic definitions; the
+# `benchmark` note gives the MA name for the same measure.
+# Scores run 0 (lowest risk) to 100 (highest risk), the same direction as the sovereign scorecard. Not a credit rating.
+# Thresholds are five points from the 0-score end to the 100-score end, scored in straight lines between them.
+version: '0.3'
+benchmark_state: Massachusetts
+factors:
+  economy: {label: Economy and tax base, weight: 0.25}
+  finances: {label: Financial performance, weight: 0.30}
+  debt: {label: Debt and liabilities, weight: 0.30}
+  governance: {label: Management and governance, weight: 0.15}
+indicators:
+  - {id: eqv_per_capita, factor: economy, weight: 0.25, unit: 'US$ thousand', label: Full market value per capita,
+     benchmark: MA DLS equalized valuation (EQV),
+     thresholds: [300, 200, 150, 110, 80]}
+  - {id: income_ratio, factor: economy, weight: 0.25, unit: '% of US median', label: Median household income vs US median,
+     thresholds: [150, 120, 100, 85, 70]}
+  - {id: unemployment, factor: economy, weight: 0.15, unit: '%', label: Unemployment rate, thresholds: [3, 4, 5, 6.5, 8]}
+  - {id: pop_change_10y, factor: economy, weight: 0.15, unit: '%', label: Population change over 10 years,
+     thresholds: [8, 4, 0, -3, -6]}
+  - {id: top10_taxpayers, factor: economy, weight: 0.20, unit: '% of levy', label: Top 10 taxpayers' share of levy,
+     thresholds: [5, 8, 12, 18, 25]}
+  - {id: reserves_pct, factor: finances, weight: 0.30, unit: '% of revenue', label: Unrestricted reserves incl. rainy-day funds,
+     benchmark: MA certified free cash plus stabilization funds,
+     thresholds: [20, 15, 10, 6, 3]}
+  - {id: operating_margin, factor: finances, weight: 0.25, unit: '% of revenue', label: General fund operating margin (3-year average),
+     thresholds: [3, 1.5, 0, -2, -4]}
+  - {id: cash_pct_exp, factor: finances, weight: 0.15, unit: '% of expenditure', label: Unrestricted cash and investments,
+     thresholds: [30, 20, 12, 7, 3]}
+  - {id: excess_levy_capacity, factor: finances, weight: 0.15, unit: '% of levy limit', label: Unused capacity under state tax limit,
+     benchmark: MA excess levy capacity under Proposition 2½; left blank where the state sets no limit (drops out),
+     thresholds: [8, 4, 2, 1, 0.25]}
+  - {id: state_aid_share, factor: finances, weight: 0.15, unit: '% of revenue', label: State and federal aid share of revenue,
+     thresholds: [10, 20, 30, 40, 50]}
+  - {id: net_debt_pct_eqv, factor: debt, weight: 0.25, unit: '% of equalized valuation', label: Net direct debt (% of full market value),
+     thresholds: [0.5, 1, 2, 3, 5]}
+  - {id: debt_service_pct_exp, factor: debt, weight: 0.20, unit: '% of expenditure', label: Debt service,
+     thresholds: [3, 6, 9, 12, 15]}
+  - {id: pension_funded, factor: debt, weight: 0.25, unit: '%', label: Pension funded ratio, benchmark: PERAC funding schedules, thresholds: [85, 75, 65, 55, 45]}
+  - {id: opeb_pct_rev, factor: debt, weight: 0.15, unit: '% of revenue', label: Net OPEB liability,
+     thresholds: [25, 50, 100, 150, 200]}
+  - {id: payout_10y, factor: debt, weight: 0.15, unit: '% of principal', label: Principal repaid within 10 years,
+     thresholds: [80, 70, 60, 50, 40]}
+  # Administration, scored against Massachusetts practice (yes = meets the MA standard or an equivalent).
+  - {id: reserve_policy, factor: governance, weight: 0.15, unit: 'yes/no', label: Written reserve policy with target levels, type: flag,
+     benchmark: MA DLS best practice (financial management policies)}
+  - {id: capital_plan, factor: governance, weight: 0.15, unit: 'yes/no', label: Five-year capital improvement plan, type: flag,
+     benchmark: MA DLS best practice; required by many MA charters}
+  - {id: audit_days, factor: governance, weight: 0.15, unit: days after year end, label: Audit (ACFR) completed,
+     thresholds: [150, 180, 240, 270, 365], benchmark: MA free cash certification needs the audited balance sheet}
+  - {id: audit_findings, factor: governance, weight: 0.15, unit: count, label: Material weaknesses in latest audit,
+     thresholds: [0, 0.5, 1, 2, 3]}
+  - {id: balance_certified, factor: governance, weight: 0.10, unit: 'yes/no', type: flag,
+     label: Fund balance certified before it is spent, benchmark: MA DLS free cash certification}
+  - {id: valuation_review, factor: governance, weight: 0.10, unit: 'yes/no', type: flag,
+     label: State review of property values every 5 years, benchmark: MA DLS five-year revaluation certification}
+  - {id: pension_full_funding_plan, factor: governance, weight: 0.10, unit: 'yes/no', type: flag,
+     label: Pension schedule to full funding by a set year, benchmark: PERAC schedules (full funding by 2040)}
+  - {id: opeb_trust, factor: governance, weight: 0.10, unit: 'yes/no', type: flag,
+     label: OPEB trust fund with regular contributions, benchmark: MA G.L. c.32B s.20 OPEB trust}
+# Each stress case changes inputs: add a number, or multiply by one. Effects that follow from a change (for example
+# debt as a share of a lower valuation) are listed as their own lines so every step is visible.
+stress:
+  Recession:
+    - {id: eqv_per_capita, mul: 0.90, note: valuations fall 10%}
+    - {id: net_debt_pct_eqv, mul: 1.111, note: same debt over a 10% lower valuation}
+    - {id: unemployment, add: 3, note: unemployment up 3 points}
+    - {id: reserves_pct, add: -3, note: reserves drawn to cover the gap}
+    - {id: operating_margin, add: -2.5, note: state aid down 5% and no new growth}
+    - {id: excess_levy_capacity, add: -1, note: levy capacity used to balance}
+  Pension shock:
+    - {id: pension_funded, add: -10, note: investment returns 2 points below assumption for several years}
+    - {id: operating_margin, add: -1, note: higher required contributions}

@@ -1,0 +1,62 @@
+# RPF-04 v0.1: Debt sustainability, MAC SRDSF and LIC DSF ports
+
+**Status:** both ports match their templates cell for cell; untested on a new country. Independent ports, not
+endorsed by the IMF or the World Bank.
+**Code:** `sovrisk/srdsf/` (market-access countries), `sovrisk/licdsf/` (low-income countries).
+**Run:** `python -m sovrisk.srdsf.run --golden tests/golden/srdsf --fan --gfn`;
+`python -m sovrisk.licdsf.run --golden <folder of golden files>`.
+
+## Purpose
+
+Debt sustainability analysis as the IMF and World Bank do it: for market-access countries, the Sovereign Risk and Debt
+Sustainability Framework (MAC SRDSF); for low-income countries, the Debt Sustainability Framework (LIC DSF, IDA21
+version of 8 Dec 2025).
+
+## Method
+
+Each template sheet is ported to Python, one file per sheet or group of sheets, and `run.py` chains them until no
+value changes (see [ARCHITECTURE.md](../ARCHITECTURE.md#chaining-the-excel-ports)).
+
+- **MAC SRDSF:** the 16 formula sheets, plus its two macros: the fan chart simulation (`fan.simulate`, with the
+  template's own random-number generator and seed) and the GFN converge loop (`gfn.simulate`). Outputs include the
+  risk signals, the debt fan chart, the near-term logit, gross financing needs, the medium-term index and the stress
+  tests.
+- **LIC DSF:** all 76 formula sheets: baseline, external and public debt, present values, stress tests, realism
+  tools and the risk rating outputs.
+
+## Inputs
+
+The template's own input sheets, loaded as a "book" of cell values. The MAC SRDSF sample in the template is a
+fictional country and is in `tests/golden/srdsf/`. The LIC DSF sample is real country data, so it is kept private.
+
+## Outputs
+
+Every cell of every ported sheet. The dashboard's debt sustainability section shows the MAC SRDSF sample run.
+
+## Validation
+
+- **MAC SRDSF:** each sheet matches every formula cell of the template's stored values, errors included
+  (`test_srdsf.py`); the whole chain from inputs only matches again (`test_srdsf_run.py`); the two macros reproduce
+  the template's values (`test_srdsf_fan.py`, `test_srdsf_gfn.py`); and with 101 changed inputs it matches the
+  template recalculated in LibreOffice. That check sets the country selector to a listed country so peer-group
+  lookups resolve; the data stay the fictional sample.
+- **LIC DSF:** each sheet matches every formula cell; the whole chain matches all 199,437 formula cells; and under
+  changed macro paths, loan terms and stress settings it agrees on every cell with an independent evaluator of the
+  template's own formulas (`tests/licdsf_oracle.py`), since LibreOffice cannot recalculate this template. These tests
+  are private because they need the sample data.
+
+See [TESTING.md](../TESTING.md).
+
+## Limits
+
+The templates' own slips are kept so results match, and each module lists them in `QUIRKS` (for example, the
+stress-scenario GDP expansion drops higher-order terms, and a zero-coupon instrument amortizes as #N/A because of a
+label mismatch). Judgement calls the IMF and World Bank staff make on top of the templates are not modelled.
+
+## Use
+
+Research only. Not an IMF or World Bank assessment.
+
+## Change log
+
+- v0.1: MAC SRDSF and LIC DSF ports with parity tests; MAC SRDSF dashboard section.

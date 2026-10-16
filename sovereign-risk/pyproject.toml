@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sovrisk"
-version = "0.5.0"
-description = "Sovereign risk scorecard, scenarios, backtests and Monte Carlo (Randori M-13 port; untested, preliminary)"
+version = "0.8.1"
+description = "Sovereign risk scorecard, scenarios, backtests and Monte Carlo (Randori RPF-01 port; untested, preliminary)"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.26", "scipy>=1.11", "pyyaml>=6", "openpyxl>=3.1"]
 
@@ -14,7 +14,7 @@ test = ["pytest>=8"]
 dashboard = ["plotly>=5"]
 
 [tool.setuptools]
-packages = ["sovrisk"]
+packages = ["sovrisk", "sovrisk.srdsf", "sovrisk.licdsf"]
 
 [tool.setuptools.package-data]
 sovrisk = ["assets/*"]

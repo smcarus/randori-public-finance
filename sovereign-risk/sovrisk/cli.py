@@ -12,7 +12,7 @@ from .montecarlo import simulate
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description='run the M-13 sovereign risk model (v0.5, UNTESTED, PRELIMINARY).')
+    ap = argparse.ArgumentParser(description='run the RPF-01 sovereign risk model (v0.5, UNTESTED, PRELIMINARY).')
     ap.add_argument('--root', default=None, help='repository root holding rulebook/ and data/')
     ap.add_argument('--out', default='outputs')
     a = ap.parse_args(argv)

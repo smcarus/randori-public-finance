@@ -1,0 +1,97 @@
+# RPF-06 spillover network (sovrisk/spillover.py). DRAFT elasticities for review; untested.
+# Units: exposures are % of the receiving country's GDP; GDP shocks and price shocks are in %; rate shocks in basis
+# points. Results are the change in the receiving country's GDP, in percent.
+# Every `source` names the published literature the number is meant to sit in; none is a fitted estimate. Anything
+# marked "draft, to verify" is a placeholder in the right range, not a figure read off a specific table.
+version: '0.1'
+
+channels:
+  trade:
+    label: Trade (exports to the shocked partner)
+    file: spill_trade.csv            # partner = ISO3 of the importing country
+    income_elasticity: 2.0
+    income_elasticity_source: >-
+      Income elasticity of import demand. Houthakker and Magee (1969), "Income and Price Elasticities in World
+      Trade", Review of Economics and Statistics; Hooper, Johnson and Marquez (2000), "Trade Elasticities for the
+      G-7 Countries", Princeton Studies in International Economics; IMF World Economic Outlook, October 2016,
+      chapter 2 (import intensity of demand). Estimates range roughly 1.5 to 2.5. Value 2.0: draft, to verify.
+    value_added_share: 0.7
+    value_added_share_source: >-
+      Domestic value added per unit of gross exports, so a cut in gross exports is not counted as a one-for-one GDP
+      loss. OECD-WTO Trade in Value Added (TiVA) database; should be set per country from TiVA. Value 0.7: draft,
+      to verify.
+  commodities:
+    label: Commodities (net exports of the commodity)
+    file: spill_commodities.csv      # partner = commodity name (oil, metals, copper, food); value = net exports
+    income_pass_through: 0.5
+    income_pass_through_source: >-
+      Share of the terms-of-trade income change that shows up in GDP within the year. IMF World Economic Outlook,
+      October 2015, chapter 2 ("Where Are Commodity Exporters Headed? Output Growth in the Aftermath of the
+      Commodity Boom"); Gruss (2014), IMF Working Paper "After the Boom: Commodity Prices and Economic Growth in
+      Latin America and the Caribbean". Value 0.5: draft, to verify.
+  banks:
+    label: Banks (claims of banks in the shocked lending country)
+    file: spill_banks.csv            # partner = ISO3 of the lending (bank nationality) country
+    retrenchment_elasticity: 1.0
+    retrenchment_elasticity_source: >-
+      % fall in foreign claims per 1% fall in the lending country's GDP. Cetorelli and Goldberg (2011), "Global
+      Banks and International Shock Transmission: Evidence from the Crisis", IMF Economic Review; IMF Spillover
+      Reports 2011-2014. Value 1.0: draft, to verify.
+    gdp_per_credit: 0.3
+    gdp_per_credit_source: >-
+      GDP loss per unit of credit withdrawn (both as % of GDP). Draft, to verify; no single published figure is
+      used. Should be checked against the credit-supply literature before use.
+  rates:
+    label: Portfolio and rates (US dollar debt refinanced at higher rates)
+    file: spill_rates.csv            # partner = usd_debt_share (% of public debt) or gfn (gross financing need, % GDP)
+    yield_pass_through: 1.0
+    yield_pass_through_source: >-
+      Change in the sovereign's USD borrowing cost per 1 pp rise in US rates. IMF Global Financial Stability
+      Report discussions of US rate spillovers to emerging market yields; Ahmed, Akinci and Queralto (2021),
+      "U.S. Monetary Policy Spillovers to Emerging Markets: Both Shocks and Vulnerabilities Matter", Federal Reserve
+      International Finance Discussion Paper. Value 1.0 (full pass-through on USD debt): draft, to verify.
+    fiscal_multiplier: 0.5
+    fiscal_multiplier_source: >-
+      GDP loss per unit of extra interest cost (% GDP) that must be offset by fiscal adjustment. Blanchard and
+      Leigh (2013), "Growth Forecast Errors and Fiscal Multipliers", IMF Working Paper; multipliers for emerging
+      markets are usually put below those for advanced economies. Value 0.5: draft, to verify.
+  remittances:
+    label: Remittances (inflows from the shocked sending country)
+    file: spill_remittances.csv      # partner = ISO3 of the sending country
+    host_gdp_elasticity: 1.0
+    host_gdp_elasticity_source: >-
+      % fall in remittances per 1% fall in the sending country's GDP. Frankel (2011), "Are Bilateral Remittances
+      Countercyclical?", Open Economies Review; World Bank Migration and Development Briefs. Value 1.0: draft,
+      to verify.
+    consumption_pass_through: 0.6
+    consumption_pass_through_source: >-
+      Share of lost remittances that becomes lost GDP (consumption of receiving households, less imports).
+      Draft, to verify.
+
+second_round:
+  damping: 0.5
+  damping_source: >-
+    Modelling choice, not an estimate: only half of a partner's GDP loss is passed on through its imports each
+    round, standing in for offsets (exchange rates, policy responses) that a full model such as the IMF's FSGM or
+    GIMF would capture. Draft, to verify against IMF spillover simulations.
+  max_rounds: 50
+  tolerance: 1.0e-9
+
+# Shocks: gdp {ISO3: %}, price {commodity: %}, rate {USD: bp}. A scenario shocks only what it lists; for example
+# china_slowdown does not move metal prices unless a price shock is added to it.
+scenarios:
+  us_recession:
+    label: US recession (GDP -2%)
+    gdp: {USA: -2}
+  china_slowdown:
+    label: China slowdown (GDP -3%)
+    gdp: {CHN: -3}
+  oil_down_30:
+    label: Oil price -30%
+    price: {oil: -30}
+  copper_down_25:
+    label: Copper price -25%
+    price: {copper: -25}
+  us_rates_up_200:
+    label: US rates +200 bp
+    rate: {USD: 200}

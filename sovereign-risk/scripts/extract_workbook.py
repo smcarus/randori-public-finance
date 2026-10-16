@@ -1,4 +1,4 @@
-"""One-time extraction of M-13 v0.4 from the Excel workbook into config and data files.
+"""One-time extraction of RPF-01 v0.4 from the Excel workbook into config and data files.
 
 Writes rulebook/*.yaml, data/*.csv and tests/golden/*.json. The golden files hold the
 workbook's own calculated values, which the parity tests compare against.

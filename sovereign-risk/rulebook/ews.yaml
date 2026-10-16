@@ -1,0 +1,37 @@
+# RPF-05 macro early-warning panel (sovrisk/ews.py). DRAFT thresholds and weights for review.
+# Each indicator is rated green / amber / red against two thresholds. `bad: low` means low values are risky
+# (amber when value < amber, red when value < red); `bad: high` means high values are risky (amber when > amber, red when > red).
+# Weights here are the fallback, used when no crisis dates are given. With data/crisis_dates.csv the weights come from
+# the signals method (Kaminsky-Lizondo-Reinhart): weight = 1/NSR, normalised, indicators with NSR >= 1 dropped.
+# Units: percent unless noted. Column names are the column names of data/ews_panel.csv.
+version: '0.1'
+indicators:
+  - {id: reserves_months, label: Reserves in months of imports, unit: months, bad: low, amber: 4, red: 3, weight: 1}
+  - {id: reserves_std, label: Reserves / short-term external debt, unit: '%', bad: low, amber: 150, red: 100, weight: 1}
+  - {id: ca_gdp, label: Current account balance, unit: '% of GDP', bad: low, amber: -3, red: -5, weight: 1}
+  - {id: reer_dev, label: REER vs 10-year trend, unit: '%', bad: high, amber: 10, red: 20, weight: 1}
+  - {id: credit_gap, label: Credit-to-GDP gap, unit: pp, bad: high, amber: 2, red: 10, weight: 1}
+  - {id: inflation, label: Inflation, unit: '%', bad: high, amber: 10, red: 20, weight: 1}
+  - {id: gfn_gdp, label: Gross financing need, unit: '% of GDP', bad: high, amber: 10, red: 15, weight: 1,
+     optional: true, note: from the debt sustainability module (sovrisk.srdsf GFN_GDP) when available}
+# Points per rating in the warning score (0-100): weighted average over the indicators with data.
+points: {green: 0, amber: 50, red: 100}
+# Signals method. Annual data: a signal in year t is a good signal if a crisis starts in years t+1 .. t+window_years
+# (24 months = 2 years). Crisis-start years themselves are left out of the count. `signal_at` is the rating that
+# counts as a signal.
+signals:
+  window_years: 2
+  signal_at: amber
+  crisis_types: []          # empty = all types in the crisis file; else e.g. [currency, banking, sovereign]
+# Use a value up to this many years older than the table year when the table year is missing (year used is reported).
+stale_years: 1
+# Credit gap fallback when BIS has none: one-sided HP filter on credit-to-GDP (column credit_gdp).
+# BIS: lambda 400000 on quarterly data. Annual equivalent by Ravn-Uhlig (2002) frequency scaling, lambda_q / 4^4:
+# 400000 / 256 = 1562.5. Drehmann and Yetman (2018) and the BIS use the same scaling argument.
+hp:
+  lambda_quarterly: 400000
+  lambda_annual: 1562.5
+  min_obs: 10               # years of credit_gdp before the first gap is reported (BIS needs about 10 years)
+# REER fallback when reer_dev is missing: percent deviation of the REER index (column reer) from the average of the
+# 10 previous years (data up to t-1 only).
+reer_trend_years: 10
