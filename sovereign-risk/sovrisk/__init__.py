@@ -5,5 +5,5 @@ Not investment advice and not a credit rating.
 from .config import load_config
 from .model import run_model
 
-__version__ = '0.6.0'
+__version__ = '0.7.0'
 __all__ = ['load_config', 'run_model']

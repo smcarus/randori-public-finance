@@ -3,7 +3,7 @@
 > **FOR RESEARCH PURPOSES ONLY. CONFIDENTIAL.** Randori Resources LLC. Not investment advice, not a municipal
 > advisory recommendation and not a credit rating. Use at your own risk.
 
-**Status: v0.6, UNTESTED, PRELIMINARY. Engine only: Randori's analyst inputs, country scores and calibration data are not included.**
+**Status: v0.7, UNTESTED, PRELIMINARY. Engine only: Randori's analyst inputs, country scores and calibration data are not included.**
 
 A Python port of the Randori M-13 sovereign risk scorecard workbook
 (`Randori_Country_Risk_Scores_Oct2026.xlsx`). Privately it reproduces the workbook to within 1e-7; the parity tests and
@@ -26,6 +26,7 @@ their golden values use Randori's analyst inputs, so they are not in this public
 | `sovrisk/levers.py` | (Python only) | Stability levers (insurance, reinsurance, credit, banking, revenue, investor protection) from `rulebook/levers.yaml`; exact re-run with any set switched on. ILLUSTRATIVE magnitudes |
 | `sovrisk/dashboard.py` | (all) | One HTML page: colour-coded risk map, ranking, Monte Carlo loss, and per-country pillars, scenarios, sensitivity, default PD, insurance perils, bond recovery and lever toggles |
 | `sovrisk/pfram.py` | PFRAM 2.0 (IMF and World Bank) | PPP fiscal risk: private partner's income statement and cash waterfall, government accrual and cash accounts, balance sheet, debt and revenue guarantees, early termination, macro shocks, risk matrix, and the portfolio's effect on deficit and debt. ILLUSTRATIVE projects in `data/pfram_projects.yaml` |
+| `sovrisk/muni.py` | (Python only) | M-15 municipal credit scorecard: 0-100 risk score and grade for a Massachusetts city or town from economy, finances, debt and governance indicators (`rulebook/muni.yaml`), recession and pension stress cases, peer percentiles. ILLUSTRATIVE towns in `data/muni_towns.csv`; not a credit rating |
 
 ## Layout
 
@@ -51,6 +52,7 @@ pip install -e .[dashboard]       # optional: embeds plotly.js so the dashboard 
 python -m sovrisk.dashboard --out outputs/dashboard.html
 python -m sovrisk.levers --list
 python -m sovrisk.pfram --out outputs   # PPP fiscal risk, illustrative projects
+python -m sovrisk.muni --town "Town E"   # municipal scorecard, illustrative towns
 ```
 
 ## Differences from the workbook
@@ -60,6 +62,15 @@ Venezuela, Ecuador and Zambia have no WEO projections. For them, the debt indica
 country's stress rows in Debt Scenarios: Venezuela took Nigeria's debt path, Ecuador took El Salvador's,
 and Zambia took Zimbabwe's. These countries now show the debt indicators as blank. Their country scores
 were already blank, because they have no other inputs, so no headline result changed.
+
+## Municipal credit scorecard (sovrisk.muni, M-15 v0.1)
+
+Scores run from 0 (lowest risk) to 100 (highest), with grades 1-10, as in the sovereign scorecard. Draft weights:
+economy and tax base 30%, financial performance 30%, debt and liabilities 30%, management and governance 10%. The
+indicators, thresholds, weights and stress cases are all in `rulebook/muni.yaml`; a missing indicator drops out and
+its factor's weights are rescaled. It is Randori's own model, not a credit rating, and is untested: the ten towns in
+`data/muni_towns.csv` are hypothetical. Planned data sources for real towns: the MA DLS Municipal Databank, Census
+ACS, BLS local unemployment, PERAC and audited financial statements on MSRB EMMA.
 
 ## PFRAM 2.0 port (sovrisk.pfram)
 

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import load_config, pfram, run_model
+from . import load_config, muni, pfram, run_model
 from .backtest import pd_backtest
 from .config import ROOT
 from .decisions import bond_table, default_table, pri_book, _rows
@@ -116,7 +116,20 @@ def dashboard_data(cfg, root=ROOT):
         'backtest': {'brier': bt.get('brier'), 'skill': bt.get('skill'), 'n': bt.get('n'), 'bins': bt.get('bins', []),
                      'synthetic': bool(cfg.settings['backtest'].get('include_synthetic'))},
         'pfram': pfram_data(root),
+        'muni': muni_data(root),
     })
+
+
+def muni_data(root=ROOT):
+    """Municipal credit scorecard (sovrisk.muni): scores, factors, stress cases and peer percentiles per town."""
+    if not (Path(root) / 'rulebook' / 'muni.yaml').exists():
+        return None
+    r = muni.run_all(root)
+    rb = r['rulebook']
+    return {'model': r['model'], 'factors': {k: f['label'] for k, f in rb['factors'].items()},
+            'cases': list(rb.get('stress', {})),
+            'stress_notes': {c: [x['note'] for x in v] for c, v in rb.get('stress', {}).items()},
+            'towns': r['towns']}
 
 
 def pfram_data(root=ROOT):
@@ -223,6 +236,21 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="card"><h2>Restructuring</h2><div id="bonds"></div></div>
 </div>
 <div class="card" style="margin-top:16px"><h2>Calibration (backtest)</h2><div id="calnote" class="muted"></div><div id="cal" class="chart"></div></div>
+<section id="muni">
+<div class="row"><h2 style="margin:0">Municipal credit scorecard</h2><span class="tag" id="mumodel"></span></div>
+<div class="muted" id="musub"></div>
+<div class="grid" style="margin-top:12px">
+<div class="card"><h2>Towns ranked by risk score</h2><div class="muted">0 is lowest risk, 100 highest. Markers show the score under each stress case.</div><div id="murank" class="chart" style="height:380px"></div></div>
+<div class="card"><h2 id="mufh">Factor scores</h2><div class="muted">Base case and stress cases, 0 to 100</div><div id="mufac" class="chart" style="height:380px"></div></div>
+</div>
+<div class="row"><h2 style="margin:0" id="muname"></h2><select id="mupick"></select></div>
+<div class="kpis" id="mukpis"></div>
+<div class="grid">
+<div class="card"><h2>What drives the score</h2><div class="muted">Points each indicator adds to the town score (they sum to the score)</div><div id="mupts" class="chart" style="height:460px"></div></div>
+<div class="card"><h2>Against the other towns</h2><div class="muted">Percentile rank on each indicator; 100 is the riskiest town in the set</div><div id="mupct" class="chart" style="height:460px"></div></div>
+</div>
+<div class="card" style="margin-top:16px"><details><summary>Indicator table for this town</summary><div class="scroll" id="mutable"></div></details></div>
+</section>
 <section id="pfram">
 <div class="row"><h2 style="margin:0">PPP fiscal risk (PFRAM 2.0)</h2><span class="tag" id="pfillus"></span></div>
 <div class="muted" id="pfsub"></div>
@@ -390,6 +418,59 @@ document.getElementById('lvall').onclick = () => { D.levers.forEach(l=>active.ad
 document.getElementById('lvnone').onclick = () => { active.clear(); renderLevers(); };
 const _show = show; show = n => { _show(n); if (D.countries[n]) renderLevers(); };
 show(names.includes('Belize') ? 'Belize' : names[0]);
+
+// ---------------------------------------------------------------- municipal credit scorecard
+{ const U = D.muni;
+if (!U) { document.getElementById('muni').style.display = 'none'; } else {
+const SER = dark ? ['#3987e5','#d95926','#199e70'] : ['#2a78d6','#eb6834','#1baf7a'];   // validated categorical slots 1-3
+const surf = dark ? '#1b2129' : '#fff', SYM = ['circle', 'diamond'];
+const tn = Object.keys(U.towns).sort((a,b)=>U.towns[a].base.score-U.towns[b].base.score);
+document.getElementById('mumodel').textContent = `${U.model} · illustrative towns · untested · not a credit rating`;
+document.getElementById('musub').textContent = `${tn.length} hypothetical Massachusetts towns scored on economy, finances, debt and governance (rulebook/muni.yaml). `
+  + U.cases.map(c=>`${c}: ${U.stress_notes[c].join('; ')}.`).join(' ');
+const rk = tn.slice().reverse();
+Plotly.newPlot('murank', [{type:'bar', orientation:'h', name:'Base case', y:rk, x:rk.map(n=>U.towns[n].base.score), marker:{color:SER[0]},
+    text:rk.map(n=>`grade ${U.towns[n].base.grade}`), textposition:'inside', insidetextanchor:'start', textfont:{color:'#fff'},
+    customdata:rk.map(n=>U.towns[n].profile), hovertemplate:'%{y} (%{customdata}): %{x:.1f}<extra>Base case</extra>'},
+  ...U.cases.map((c,i)=>({type:'scatter', mode:'markers', name:c, y:rk, x:rk.map(n=>U.towns[n].stress[c].score),
+    marker:{color:SER[i+1], size:10, symbol:SYM[i%2], line:{color:surf, width:2}}, hovertemplate:`%{y}: %{x:.1f}<extra>${c}</extra>`}))],
+  L({margin:{l:70,r:24,t:10,b:30}, xaxis:{range:[0,100], gridcolor:grid}, legend:{orientation:'h', y:-0.12}, hovermode:'y unified'}), cfg);
+document.getElementById('murank').on('plotly_click', e => showMuni(e.points[0].y));
+const mp = document.getElementById('mupick'); tn.forEach(n => mp.add(new Option(`${n} (${U.towns[n].profile})`, n)));
+mp.onchange = () => showMuni(mp.value);
+function showMuni(n){
+  const t = U.towns[n], b = t.base; mp.value = n;
+  document.getElementById('muname').textContent = n;
+  document.getElementById('mufh').textContent = `Factor scores: ${n}`;
+  const k = [['Risk score', num(b.score)], ['Grade (1-10)', b.grade], ...U.cases.map(c=>[c, num(t.stress[c].score)]),
+    ['Profile', `<span style="font-size:16px">${t.profile}</span>`], ['Population', (t.population||0).toLocaleString('en-US')], ['Data coverage', pct(b.coverage,0)]];
+  document.getElementById('mukpis').innerHTML = k.map(([a,v])=>`<div class="kpi"><span>${a}</span><b>${v}</b></div>`).join('');
+  const fk = Object.keys(U.factors);
+  Plotly.react('mufac', [['Base case', b], ...U.cases.map(c=>[c, t.stress[c]])].map(([name, s], i)=>({type:'bar', orientation:'h', name,
+    y:fk.map(f=>U.factors[f]), x:fk.map(f=>s.factors[f].score), marker:{color:SER[i], line:{color:surf, width:1}},
+    hovertemplate:`%{y}: %{x:.1f}<extra>${name}</extra>`})),
+    L({barmode:'group', margin:{l:10,r:24,t:10,b:30}, yaxis:{automargin:true, autorange:'reversed'}, xaxis:{range:[0,100], gridcolor:grid}, legend:{orientation:'h', y:-0.12}}), cfg);
+  const ids = Object.keys(b.indicators).filter(i=>b.indicators[i].score!=null);
+  const byPts = ids.slice().sort((x,y)=>b.indicators[x].points-b.indicators[y].points);
+  Plotly.react('mupts', [{type:'bar', orientation:'h', y:byPts.map(i=>b.indicators[i].label), x:byPts.map(i=>b.indicators[i].points), marker:{color:SER[0]},
+    customdata:byPts.map(i=>[U.factors[b.indicators[i].factor], b.indicators[i].value, b.indicators[i].unit, b.indicators[i].score]),
+    text:byPts.map(i=>num(b.indicators[i].points)), textposition:'outside', cliponaxis:false,
+    hovertemplate:'%{y}<br>%{customdata[0]}<br>value %{customdata[1]} %{customdata[2]} · score %{customdata[3]:.0f}<br>adds %{x:.1f} points<extra></extra>'}],
+    L({margin:{l:10,r:30,t:10,b:30}, yaxis:{automargin:true}, xaxis:{gridcolor:grid, rangemode:'tozero'}}), cfg);
+  const byPct = ids.filter(i=>t.percentile[i]!=null).sort((x,y)=>t.percentile[x]-t.percentile[y]);
+  Plotly.react('mupct', [{type:'bar', orientation:'h', y:byPct.map(i=>b.indicators[i].label), x:byPct.map(i=>t.percentile[i]), marker:{color:SER[0]},
+    customdata:byPct.map(i=>[b.indicators[i].value, b.indicators[i].unit]),
+    hovertemplate:'%{y}: percentile %{x:.0f}<br>value %{customdata[0]} %{customdata[1]}<extra></extra>'}],
+    L({margin:{l:10,r:24,t:10,b:30}, yaxis:{automargin:true}, xaxis:{range:[0,100], tickvals:[0,25,50,75,100], gridcolor:grid},
+      shapes:[{type:'line', x0:50, x1:50, y0:0, y1:1, yref:'paper', line:{color:dark?'#9aa4b2':'#5b6575', width:1, dash:'dot'}}],
+      annotations:[{x:50, y:0, yref:'paper', yanchor:'bottom', xanchor:'left', xshift:4, text:'median town', showarrow:false, font:{size:11}}]}), cfg);
+  document.getElementById('mutable').innerHTML = '<table><tr><th>Indicator</th><th>Factor</th><th>Value</th><th>Unit</th><th>Score</th><th>Points</th><th>Percentile</th>'
+    + U.cases.map(c=>`<th>Score, ${c}</th>`).join('') + '</tr>'
+    + Object.keys(b.indicators).map(i=>{ const x = b.indicators[i]; return `<tr><td>${x.label}</td><td>${U.factors[x.factor]}</td><td>${x.value??''}</td><td>${x.unit}</td><td>${num(x.score,0)}</td><td>${num(x.points)}</td><td>${num(t.percentile[i],0)}</td>`
+      + U.cases.map(c=>`<td>${num(t.stress[c].indicators[i].score,0)}</td>`).join('') + '</tr>'; }).join('') + '</table>';
+}
+showMuni(tn[Math.floor(tn.length/2)]);
+}}
 
 // ---------------------------------------------------------------- PPP fiscal risk (PFRAM 2.0)
 const F = D.pfram;

@@ -36,3 +36,10 @@ def test_dashboard_has_pfram_section():
     assert [p['id'] for p in F['projects']] == ['P1', 'P2', 'P3']
     assert all(len(p['cases']) == 1 + len(F['shocks']) for p in F['projects'])
     assert F['portfolio'][0]['year'] == 2026 and 'PPP fiscal risk (PFRAM 2.0)' in render(data)
+
+
+def test_dashboard_has_muni_section():
+    data = dashboard_data(load_config())
+    U = data['muni']
+    assert len(U['towns']) == 10 and U['model'].startswith('M-15')
+    assert 'Municipal credit scorecard' in render(data)

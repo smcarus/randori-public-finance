@@ -1,0 +1,55 @@
+# M-15 municipal credit scorecard (sovrisk/muni.py). DRAFT weights and thresholds for review.
+# Scores run 0 (lowest risk) to 100 (highest risk), the same direction as the sovereign scorecard. Not a credit rating.
+# Thresholds are five points from the 0-score end to the 100-score end, scored in straight lines between them.
+version: '0.1'
+factors:
+  economy: {label: Economy and tax base, weight: 0.30}
+  finances: {label: Financial performance, weight: 0.30}
+  debt: {label: Debt and liabilities, weight: 0.30}
+  governance: {label: Management and governance, weight: 0.10}
+indicators:
+  - {id: eqv_per_capita, factor: economy, weight: 0.25, unit: 'US$ thousand', label: Equalized valuation per capita,
+     thresholds: [300, 200, 150, 110, 80]}
+  - {id: income_ratio, factor: economy, weight: 0.25, unit: '% of state median', label: Median household income vs state,
+     thresholds: [150, 120, 100, 85, 70]}
+  - {id: unemployment, factor: economy, weight: 0.15, unit: '%', label: Unemployment rate, thresholds: [3, 4, 5, 6.5, 8]}
+  - {id: pop_change_10y, factor: economy, weight: 0.15, unit: '%', label: Population change over 10 years,
+     thresholds: [8, 4, 0, -3, -6]}
+  - {id: top10_taxpayers, factor: economy, weight: 0.20, unit: '% of levy', label: Top 10 taxpayers' share of levy,
+     thresholds: [5, 8, 12, 18, 25]}
+  - {id: reserves_pct, factor: finances, weight: 0.35, unit: '% of revenue', label: Free cash plus stabilization funds,
+     thresholds: [20, 15, 10, 6, 3]}
+  - {id: operating_margin, factor: finances, weight: 0.30, unit: '% of revenue', label: General fund operating margin (3-year average),
+     thresholds: [3, 1.5, 0, -2, -4]}
+  - {id: excess_levy_capacity, factor: finances, weight: 0.15, unit: '% of levy limit', label: Unused levy capacity under Proposition 2½,
+     thresholds: [8, 4, 2, 1, 0.25]}
+  - {id: state_aid_share, factor: finances, weight: 0.20, unit: '% of revenue', label: State aid share of revenue,
+     thresholds: [10, 20, 30, 40, 50]}
+  - {id: net_debt_pct_eqv, factor: debt, weight: 0.25, unit: '% of equalized valuation', label: Net direct debt,
+     thresholds: [0.5, 1, 2, 3, 5]}
+  - {id: debt_service_pct_exp, factor: debt, weight: 0.20, unit: '% of expenditure', label: Debt service,
+     thresholds: [3, 6, 9, 12, 15]}
+  - {id: pension_funded, factor: debt, weight: 0.25, unit: '%', label: Pension funded ratio, thresholds: [85, 75, 65, 55, 45]}
+  - {id: opeb_pct_rev, factor: debt, weight: 0.15, unit: '% of revenue', label: Net OPEB liability,
+     thresholds: [25, 50, 100, 150, 200]}
+  - {id: payout_10y, factor: debt, weight: 0.15, unit: '% of principal', label: Principal repaid within 10 years,
+     thresholds: [80, 70, 60, 50, 40]}
+  - {id: reserve_policy, factor: governance, weight: 0.25, unit: 'yes/no', label: Formal reserve policy, type: flag}
+  - {id: capital_plan, factor: governance, weight: 0.25, unit: 'yes/no', label: Multi-year capital plan, type: flag}
+  - {id: audit_days, factor: governance, weight: 0.25, unit: days after year end, label: Audit (ACFR) completed,
+     thresholds: [150, 180, 240, 270, 365]}
+  - {id: audit_findings, factor: governance, weight: 0.25, unit: count, label: Material weaknesses in latest audit,
+     thresholds: [0, 0.5, 1, 2, 3]}
+# Each stress case changes inputs: add a number, or multiply by one. Effects that follow from a change (for example
+# debt as a share of a lower valuation) are listed as their own lines so every step is visible.
+stress:
+  Recession:
+    - {id: eqv_per_capita, mul: 0.90, note: valuations fall 10%}
+    - {id: net_debt_pct_eqv, mul: 1.111, note: same debt over a 10% lower valuation}
+    - {id: unemployment, add: 3, note: unemployment up 3 points}
+    - {id: reserves_pct, add: -3, note: reserves drawn to cover the gap}
+    - {id: operating_margin, add: -2.5, note: state aid down 5% and no new growth}
+    - {id: excess_levy_capacity, add: -1, note: levy capacity used to balance}
+  Pension shock:
+    - {id: pension_funded, add: -10, note: investment returns 2 points below assumption for several years}
+    - {id: operating_margin, add: -1, note: higher required contributions}
