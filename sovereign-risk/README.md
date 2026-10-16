@@ -93,6 +93,30 @@ Workbook behaviour kept on purpose so results match (also in `pfram.QUIRKS`):
 - With combined funding there may be no rate that meets the goal-seek condition (Excel's Goal Seek also
   fails); the port then uses the project IRR.
 
+## Debt sustainability: MAC SRDSF port (sovrisk.srdsf, M-16 v0.1)
+
+`sovrisk/srdsf/` ports the IMF's Sovereign Risk and Debt Sustainability Framework template for market-access
+countries (MAC SRDSF), sheet by sheet, plus its two macros: the fan chart simulation (`fan.simulate`, with the
+template's own random-number generator and seed) and the GFN converge loop (`gfn.simulate`). It is an independent
+port, not endorsed by the IMF. The sample in the template is a fictional country; untested on a real one.
+
+    python -m sovrisk.srdsf.run --golden tests/golden/srdsf --fan --gfn
+
+Parity:
+
+- Each of the 16 formula sheets reproduces every formula cell of the template's stored Excel values, errors
+  included (`tests/test_srdsf.py`).
+- `run()` starts from inputs only, chains the sheets until no value changes, and again matches every cell
+  (`tests/test_srdsf_run.py`).
+- With 101 changed inputs (growth, exchange rates, revenue, debt instruments) it matches the template recalculated
+  in LibreOffice (`tests/golden/srdsf_alt`, built by `scripts/srdsf_alt_golden.py`). That check sets the country
+  selector to a listed country so the peer-group lookups resolve; the data stay the fictional sample.
+
+The template's own slips are kept so results match, and each module lists them in `QUIRKS` (for example, the
+stress-scenario GDP expansion drops higher-order terms, and a zero-coupon instrument amortizes as #N/A because of a
+label mismatch). The dashboard's debt sustainability section shows the sample run: risk signals, the fan chart, the
+near-term logit, gross financing needs, the medium-term index and the stress tests.
+
 ## What is not here
 
 Randori's analyst inputs (`data/inputs.csv`, `data/countries.csv`), live backtest forecasts and the
