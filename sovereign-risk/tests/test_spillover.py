@@ -1,5 +1,6 @@
 """RPF-06 spillover network: hand-worked examples on HAND-MADE inputs (countries A, B, C are not real)."""
 import copy
+import json
 
 import numpy as np
 import pytest
@@ -116,3 +117,18 @@ def test_parsers_and_pct_gdp_on_hand_made_responses():
     assert rows == [{'country': 'AAA', 'partner': 'oil', 'value_pct_gdp': 10.0, 'year': 2023, 'source': 'hand-made'}]
     with pytest.raises(SD.DataUnavailable):
         SD.write([], 'spill_trade.csv')
+
+
+def test_world_bank_reads_every_page_and_refuses_an_error_reply(monkeypatch):
+    pages = {1: [{'page': 1, 'pages': 2}, [{'countryiso3code': 'AAA', 'date': '2023', 'value': 1.0}]],
+             2: [{'page': 2, 'pages': 2}, [{'countryiso3code': 'BBB', 'date': '2023', 'value': 2.0}]]}
+    seen = []
+
+    def fake_get(url, what):
+        seen.append(url)
+        return json.dumps(pages[int(url.rsplit('page=', 1)[1])])
+    monkeypatch.setattr(SD, '_get', fake_get)
+    assert SD.fetch_wb('all', 'SP.POP.TOTL', 2023, 2023) == {('AAA', 2023): 1.0, ('BBB', 2023): 2.0}
+    assert len(seen) == 2 and 'country/all/indicator/SP.POP.TOTL' in seen[0]
+    with pytest.raises(SD.DataUnavailable, match='Invalid value'):
+        SD.parse_wb([{'message': [{'id': '120', 'key': 'Invalid value', 'value': 'The provided parameter value is not valid'}]}])

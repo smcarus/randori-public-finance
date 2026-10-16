@@ -121,12 +121,22 @@ def parse_comtrade(d, commodity):
 # --- World Bank --------------------------------------------------------------------------------------------------
 
 def fetch_wb(iso3, indicator, y0, y1):
-    d = json.loads(_get(WB.format(iso3=iso3, ind=indicator, y0=y0, y1=y1), f'World Bank {indicator}'))
-    return parse_wb(d)
+    """One World Bank indicator for one country (iso3, or 'all'), reading every page of the response."""
+    url = WB.format(iso3=iso3, ind=indicator, y0=y0, y1=y1)
+    out, page, pages = {}, 1, 1
+    while page <= pages:
+        d = json.loads(_get(f'{url}&page={page}', f'World Bank {indicator}'))
+        out.update(parse_wb(d))
+        pages = int((d[0] or {}).get('pages') or 1)
+        page += 1
+    return out
 
 
 def parse_wb(d):
-    """World Bank API JSON -> {(iso3, year): value}."""
+    """World Bank API JSON ([page info, rows]) -> {(iso3, year): value}. An error reply (a message and no rows,
+    e.g. for an unknown indicator) raises DataUnavailable rather than reading as no data."""
+    if d and isinstance(d[0], dict) and 'message' in d[0]:
+        raise DataUnavailable(f"World Bank API error: {d[0]['message']}")
     if len(d) < 2 or d[1] is None:
         return {}
     return {(r['countryiso3code'], int(r['date'])): float(r['value']) for r in d[1]

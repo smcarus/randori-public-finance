@@ -7,18 +7,12 @@ build_panel and build_ews_panel return dict rows. Default dates (the BoC-BoE dat
 Licences: IMF, World Bank and BIS data are reusable with attribution; check the Bank of Canada database terms
 before redistributing.
 """
-import json
 import urllib.request
 
 WB = 'https://api.worldbank.org/v2/country/all/indicator/{ind}?format=json&per_page=20000&date={y0}:{y1}'
 
 IMF_SERIES = {'debt_gdp': 'GGXWDG_NGDP', 'growth': 'NGDP_RPCH', 'inflation': 'PCPIPCH', 'ca_gdp': 'BCA_NGDPD'}
 WB_SERIES = {'reserves_months': 'FI.RES.TOTL.MO'}
-
-
-def _get(url):
-    with urllib.request.urlopen(url, timeout=60) as r:
-        return json.loads(r.read().decode())
 
 
 def imf_series(ind, countries=()):
@@ -28,8 +22,9 @@ def imf_series(ind, countries=()):
 
 
 def wb_series(ind, y0=1980, y1=2026):
-    d = _get(WB.format(ind=ind, y0=y0, y1=y1))
-    return [(r['countryiso3code'], int(r['date']), r['value']) for r in d[1] if r['value'] is not None and r['countryiso3code']]
+    """One World Bank indicator for every country (the API's country/all endpoint), reading every page."""
+    from .spillover_data import fetch_wb
+    return [(iso, y, v) for (iso, y), v in sorted(fetch_wb('all', ind, y0, y1).items())]
 
 
 def build_panel(default_events, y0=1985, y1=2025):
