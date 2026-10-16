@@ -1,10 +1,11 @@
 """End-to-end runner for the MAC SRDSF port: recompute every ported sheet of a book from its inputs.
 
-Every module in this package that defines SHEETS and compute(book, sheet) is discovered at import time, so new
-sheet ports (Output, Charts, ...) join the run as soon as they exist. The sheets read each other in cycles
+Every module in this package that defines SHEETS and compute(book, sheet) is discovered at import time, so a new
+sheet port joins the run as soon as it exists. The sheets read each other in cycles
 (IdentFin <-> ResidFin <-> BaseDB, GFN <-> Triangles, Questions <-> Config <-> Macrofw), although the template has
 no cell-level circular references. run() therefore computes the sheets in a dependency-friendly order and repeats
-the whole sequence (Gauss-Seidel) until a pass changes no formula value.
+the sequence (Gauss-Seidel), skipping sheets whose inputs did not change except in the first and the confirming
+pass, until a pass changes no formula value.
 
 The two VBA buttons can be run after the formulas have settled, in the order the Start sheet lists them: the debt
 fanchart (fan.simulate, seeded) and then the GFN `converge` macro (gfn.simulate); each is followed by a re-run of
@@ -56,14 +57,15 @@ ORDER = ['Questions', 'Macrofw', 'Config', 'NewMacrofw', 'ResidFin', 'IdentFin',
 
 NOTES = [
     'There are no cell-level cycles, so every order settles; the order only changes how many passes it takes. '
-    'From blank formula cells the template settles in 3 changing passes plus a confirming pass with this ORDER '
+    'From blank formula cells the template settles in 3 changing passes plus two that change nothing (a skipping pass, then a '
+    'full confirming pass), 5 in all, with this ORDER '
     '(IdentFin before ResidFin, or BaseDB first, takes 4).',
     'Config reads GFN only in CJ41:CY41 (the converge check, GFNConvergeChk) and Signals only in two text '
     'cells, so Config runs early; the check is refreshed in the next pass.',
     'IdentFin, ResidFin and BaseDB read each other (IdentFin reads ResidFin, ResidFin reads IdentFin and BaseDB, '
     'BaseDB reads both): whichever runs first sees stale values, so all three change again in pass 2.',
-    'GFN and Triangles read each other (GFN reads the Triangles costs, Triangles the GFN scenario); one of the two '
-    'always changes once more in pass 3. Without the converge macro the loop is acyclic at cell level: Triangles '
+    'GFN and Triangles read each other (GFN reads the Triangles costs, Triangles the GFN scenario); both change '
+    'once more in pass 3. Without the converge macro the loop is acyclic at cell level: Triangles '
     'takes the scenario financing from Config!GFNConvergeOut, which only the macro writes.',
     'Charts reads its own TRANSPOSE spill ranges (SPILLS), which are filled after Charts.compute; the next pass '
     'catches Charts up.',

@@ -2,14 +2,14 @@
 
 It gathers, by creditor (IMF, IDA windows, other multilaterals, Paris Club, non-Paris Club, commercial, locally
 issued debt held by non-residents):
-1. the debt service on existing (old) MLT debt from 'Input 3' (2023-2063), its stock path and PV;
+1. the debt service on existing (old) MLT debt from 'Input 3' (2023-2068), its stock path and PV;
 2. new MLT disbursements from 'Input 4 - External Financing' and locally-issued debt from 'Input 5';
 3. the shares and average terms (interest, grace, maturity) of new borrowing;
 4. the interest, amortization, PV and nominal stock of new debt, creditor by creditor, from the PV sheets
    (PV_Base, PV_LC_NR1-3);
 5. short-term debt, totals of debt service and stocks, the grant element of new borrowing and the concessional
    share.
-Year columns: E = 2023 (last historical year), F = 2024 (first projection year) ... BN = 2083.
+Year columns: E = 2023 (last historical year), F = 2024 (first projection year) ... BN = 2084.
 """
 from sovrisk.srdsf.book import ci
 
@@ -178,7 +178,7 @@ def compute(book, sheet='Ext_Debt_Data'):
     E.set(385, 'E', CONCAT('Note: Debt service associated with ', E(1, E_) - 1, ' and ', E(1, E_),
                            ' ST debt  is captured in aggregate data on existing debt.'))
 
-    # ---- 1. existing MLT debt: debt service by creditor (2023-2063)
+    # ---- 1. existing MLT debt: debt service by creditor (2023-2068)
     OLD = cols(E_, AX)
     for c in OLD:
         for r in OLD_ROWS:
@@ -223,7 +223,7 @@ def compute(book, sheet='Ext_Debt_Data'):
     for c in cols(F_, AX):
         E.set(67, c, E(67, c - 1) - E(43, c) - (E(58, c - 1) - E(58, c)))
 
-    # ---- 3. new MLT disbursements (2024-2083)
+    # ---- 3. new MLT disbursements (2024-2084)
     NEW = cols(F_, BN)
     for c in NEW:
         for r in NEW_ROWS:

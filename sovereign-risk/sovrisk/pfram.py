@@ -1,6 +1,7 @@
-"""PPP fiscal risk: a Python port of the IMF and World Bank PPP Fiscal Risk Assessment Model (PFRAM 2.0).
+"""RPF-02 v0.1, PPP fiscal risk: a Python port of the IMF and World Bank PPP Fiscal Risk Assessment Model (PFRAM 2.0).
 
-    python -m sovrisk.pfram --list
+    python -m sovrisk.pfram --list                     # project ids and names
+    python -m sovrisk.pfram                            # summary line for every project
     python -m sovrisk.pfram --project P1 --out outputs
 
 PFRAM 2.0 is the IMF and World Bank's free Excel tool (pfram2english.xlsm). For one PPP project it builds the
@@ -629,7 +630,8 @@ RISK_CATEGORIES = ['Governance', 'Construction', 'Demand', 'Operational and perf
 
 
 def risk_rating(likelihood, impact):
-    """TRisk sheet: risk rating from likelihood and fiscal impact (Low, Medium, High)."""
+    """TRisk sheet: risk rating from likelihood and fiscal impact (each Low, Medium or High):
+    Irrelevant, Low, Medium, High or Critical; '' if either is missing."""
     lv = {'low': 1, 'medium': 2, 'high': 3}
     a, b = lv.get(str(likelihood).lower()), lv.get(str(impact).lower())
     if a is None or b is None:
@@ -715,11 +717,15 @@ def run_all(root=ROOT):
 def main(argv=None):
     ap = argparse.ArgumentParser(description='PFRAM 2.0 port: PPP fiscal risk (ILLUSTRATIVE projects).')
     ap.add_argument('--root', default=None)
-    ap.add_argument('--list', action='store_true')
+    ap.add_argument('--list', action='store_true', help='list project ids and names')
     ap.add_argument('--project', default=None)
     ap.add_argument('--out', default=None, help='folder for pfram_<id>.csv and pfram_portfolio.csv')
     a = ap.parse_args(argv)
     root = Path(a.root) if a.root else ROOT
+    if a.list:
+        for p in load(root)['projects']:
+            print(f'{p.id} {p.name}')
+        return
     r = run_all(root)
     for res in r['base']:
         p, s = res['project'], res['summary']

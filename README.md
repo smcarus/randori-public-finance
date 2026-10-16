@@ -4,6 +4,12 @@ One codebase, three versions: a web app (installable, works offline), a macOS de
 
 **Illustrative only.** Every figure is for "Town of Example", a hypothetical Massachusetts town. Nothing here is advice to any town or issuer. Randori Resources' municipal advisor registration is pending.
 
+## Also in this repo: sovereign-risk
+
+`sovereign-risk/` holds `sovrisk`, Randori's Python package of sovereign, sub-sovereign and fiscal risk models
+(RPF-01 to RPF-06; RPF stands for Randori Public Finance). It has its own README, docs and tests: see
+[sovereign-risk/README.md](sovereign-risk/README.md).
+
 ## What's inside
 
 | Tab | Source | Status |
@@ -61,7 +67,7 @@ A Play Store release needs a signing key (Build > Generate Signed Bundle) and a 
 
 ## Known gaps
 
-- Forecast needs a Model Inventory entry (suggested M-13) and a real test before it supports any recommendation.
+- Forecast needs a Model Inventory entry (the next free M- number; M-13 is retired, since it was the sovereign scorecard, now RPF-01) and a real test before it supports any recommendation.
 - M-08 does not compound new growth at 2.5% the way the DLS levy limit worksheet does. The Capital plan tab keeps M-08 v1.0; the Forecast tab uses the DLS method. Fix in M-08 v1.1.
 - M-06 School Building tab: row 30 column headings are shifted by one from column J on (labels only).
 - Not built yet: cash flow (DLS Cash Flow Forecast tool) and financial indicators (DLS indicator template).

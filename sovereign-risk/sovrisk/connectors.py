@@ -1,8 +1,11 @@
-"""Data connectors for the default-history panel. NOT YET RUN: this environment's network policy blocks these
-hosts (www.imf.org, api.worldbank.org, www.bankofcanada.ca). Check the outputs on first run.
+"""Data connectors for the default-history panel (default_fit) and the RPF-05 early-warning panel (ews). NOT YET RUN:
+the build environment's network policy blocks these hosts (www.imf.org, api.worldbank.org, stats.bis.org). Check
+the outputs on first run.
 
-Each function returns rows of (iso3, year, value). Licences: IMF and World Bank data are reusable with attribution;
-check the Bank of Canada database terms before redistributing.
+imf_series and wb_series return rows of (iso3, year, value); bis_credit_gap returns (iso2, year, value);
+build_panel and build_ews_panel return dict rows. Default dates (the BoC-BoE database) are passed in, not fetched.
+Licences: IMF, World Bank and BIS data are reusable with attribution; check the Bank of Canada database terms
+before redistributing.
 """
 import json
 import urllib.request

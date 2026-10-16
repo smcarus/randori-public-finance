@@ -5,7 +5,8 @@ template's sheets read each other in cycles at sheet level (Ext_Debt_Data <-> PV
 their output tables, PV_ResFin_pub <-> the stress-test sheets, and almost everything <-> the translation sheet),
 but there are no cell-level circular references. run() therefore computes the sheets in a dependency-friendly
 order and repeats the sequence (Gauss-Seidel) until a pass changes no formula value. Sheets none of whose inputs
-changed since they were last computed are skipped, except in the final, confirming pass.
+changed since they were last computed are skipped, except in the first pass and the final, confirming
+pass.
 
     python -m sovrisk.licdsf.run --golden tests/golden/licdsf [--keep] [-v]
 """

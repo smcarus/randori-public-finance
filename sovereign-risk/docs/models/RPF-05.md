@@ -27,8 +27,9 @@ Flags countries heading toward a currency, banking or debt crisis within the nex
 ## Inputs
 
 `data/ews_panel.csv` (country, year, indicator columns) and, optionally, `data/crisis_dates.csv` (country, year,
-type). Neither is in the repo, and neither is ever filled with made-up data. [DATA.md](../DATA.md) explains how to
-build them from the IMF, World Bank and BIS, or by hand.
+type). Neither is in the repo, and neither is ever filled with made-up data. `scripts/fetch_country_data.py ews` builds
+the panel from the IMF, World Bank and BIS (steps in the README); [DATA.md](../DATA.md) also explains how to fill
+both files by hand.
 
 ## Outputs
 

@@ -28,7 +28,7 @@ QUIRKS = [
     "E15 reads row 212 in English but 213 in the other languages.",
     "Macro-Debt_Data!E85 always shows the English label (translation!C400), whatever the language.",
     "Macro-Debt_Data!H74, H75, H97, H109, H111 and H114 (the first historical year) refer three columns back to "
-    "E74, E11, E13, E96, E108, E110 and E113 (the label/descriptor columns) instead of the previous year, so they "
+    "E89, E11, E13, E96, E108, E110 and E113 (the label/descriptor columns) instead of the previous year, so they "
     "show '...' or text-arithmetic errors; H71 drops the previous-year short-term term.",
     "Macro-Debt_Data uses both '...' (three dots) and the single ellipsis character '…' as the not-available "
     "marker, depending on the row.",

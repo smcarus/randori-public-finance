@@ -1,7 +1,8 @@
 """Output Database sheet of the LIC DSF template: the flat table submitted to the IMF/WB DSA database.
 
 Every row is one series: the country identifiers (IFS code, HIPC status, CPIA, final and mechanical ratings) repeated
-down columns B..P, and the series values by year across AB..BG (2006..2044; AM = first projection year). It copies
+down columns B..P, and the series values by year across AB..BG (2013..2044; the year header runs back to U = 2006; AM = first
+projection year). It copies
 the external and public baseline tables (scaled to billions where the series is in US dollars), the stress-test
 paths of Tables 3-4 and Chart Data, the thresholds, the coverage and tailored-test settings and a few DMX lines.
 Several rows point at deleted cells and hold #REF! in the template; they are reproduced as such.
@@ -78,7 +79,7 @@ def compute(book, sheet=DB):
         for c in range(ci('B'), ci('P') + 1):
             S.set(r, c, ref(S.get(2, c)))
 
-    # --- external baseline table (AB = 2006 reads 'Baseline - external' column C)
+    # --- external baseline table (AB = 2013 reads 'Baseline - external' column C)
     links(book, DB, """
         AB2:BG21 'Baseline - external'!C12
         AB22:BG29 'Baseline - external'!C33
@@ -197,7 +198,7 @@ def compute(book, sheet=DB):
     b9 = cis['B9']
     S.set(319, am, 1 if eq(b9, 'Weak') else 2 if eq(b9, 'Medium') else 3 if eq(b9, 'Strong') else False)
 
-    # --- DMX lines (Z = 2004 reads DMX column K)
+    # --- DMX lines (Z = 2011 reads DMX column K)
     for c in range(ci('Z'), ci('BG') + 1):
         k = c - 15
         S.set(327, c, _scaled(dmx.get(14, k), unit))

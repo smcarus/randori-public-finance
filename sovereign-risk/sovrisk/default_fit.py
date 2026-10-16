@@ -1,6 +1,7 @@
 """Default probabilities fitted to real default history, with confidence bands and a market benchmark.
 
-Pipeline (needs network access to the IMF, World Bank and Bank of Canada hosts):
+Pipeline (needs network access to the IMF and World Bank hosts; default dates from the BoC-BoE
+database are supplied as a file):
   1. build a country-year panel (connectors.py) with features known at the start of each year;
   2. label a year 1 if a new default or restructuring starts within the horizon (BoC-BoE database);
   3. fit a logit (IRLS), bootstrap by country for parameter uncertainty, test walk-forward;

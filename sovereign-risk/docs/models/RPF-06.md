@@ -22,8 +22,9 @@ Results are split by channel and by round.
 ## Inputs
 
 `data/spill_trade.csv`, `spill_commodities.csv`, `spill_banks.csv`, `spill_rates.csv` and `spill_remittances.csv`
-(country, partner, value_pct_gdp, year, source). None exist yet; [DATA.md](../DATA.md) explains how to build them
-from IMF trade statistics, BIS banking statistics, UN Comtrade and World Bank data, or by hand. The command says
+(country, partner, value_pct_gdp, year, source). None exist yet; `scripts/fetch_country_data.py` builds them from IMF
+trade statistics, BIS banking statistics, UN Comtrade and World Bank data (steps in the README), and
+[DATA.md](../DATA.md) explains how to fill them by hand. The command says
 which files are missing.
 
 ## Outputs
