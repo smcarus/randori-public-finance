@@ -422,11 +422,16 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 .sbar{display:flex;align-items:center;gap:6px;min-width:120px}.sbar i{display:block;height:10px;border-radius:0 4px 4px 0;background:var(--sbar)}.sbar span{font-variant-numeric:tabular-nums}
 .ewsm{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.ewsm .card{padding:10px}.ewsm h3{font-size:13px;margin:0}.ewsm .chart{height:190px}
 .src{font-size:12px;color:var(--muted)}.par{padding:7px 0;border-bottom:1px solid var(--line)}.par .src{margin-top:2px}tr.pick td{background:rgba(127,127,127,.08)}td.c{cursor:pointer}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:4px;overflow-x:auto;padding:0 16px;background:var(--card);border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:10px 12px;white-space:nowrap;color:var(--muted)}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:#2e7d5b;font-weight:600}.tabs button small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
 .chart{width:100%;height:320px}#map{height:430px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 12px}
 </style></head><body>
 <div class="banner">FOR RESEARCH PURPOSES ONLY. CONFIDENTIAL. Untested, preliminary and illustrative. Not investment advice and not a credit rating.</div>
 <header><h1>__TITLE__</h1><div class="muted" id="sub"></div></header>
+<nav class="tabs" id="tabs" role="tablist" aria-label="Dashboard sections"></nav>
 <main>
+<section id="sov">
 <div class="card"><h2>Risk map</h2><div class="muted">Colour shows the country score (higher is riskier). Click a country to open its page.</div><div id="map"></div></div>
 <div class="grid" style="margin-top:16px">
 <div class="card"><h2>Countries ranked</h2><div id="rank" class="chart" style="height:420px"></div></div>
@@ -449,6 +454,7 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="card"><h2>Restructuring</h2><div id="bonds"></div></div>
 </div>
 <div class="card" style="margin-top:16px"><h2>Calibration (backtest)</h2><div id="calnote" class="muted"></div><div id="cal" class="chart"></div></div>
+</section>
 <section id="muni">
 <div class="row"><h2 style="margin:0">Municipal credit scorecard</h2><span class="tag" id="mumodel"></span></div>
 <div class="muted" id="musub"></div>
@@ -1041,6 +1047,28 @@ function showSpill(k){
 }
 showSpill(Object.keys(S.scenarios)[0]);
 }}}
+</script>
+<script>
+// Group the page by type of work: one tab per group, each holding the sections below. A group whose sections all
+// hid themselves (no data) gets no tab. The open tab is kept in the address (#credit) so a link opens it.
+{ const GROUPS = [
+    {id:'credit', label:'Sovereign credit', sub:'Scorecard, levers, PD, PRI, portfolio', secs:['sov']},
+    {id:'dsa', label:'Debt sustainability', sub:'IMF MAC SRDSF', secs:['srdsf']},
+    {id:'macro', label:'Macro surveillance', sub:'Early warning, spillovers', secs:['ews','spill']},
+    {id:'ppp', label:'PPP fiscal risk', sub:'PFRAM 2.0', secs:['pfram']},
+    {id:'muni', label:'Municipal credit', sub:'Town scorecard', secs:['muni']}];
+  const el = id => document.getElementById(id), shown = id => el(id) && el(id).style.display !== 'none';
+  const live = GROUPS.filter(g => g.secs.some(shown)), nav = el('tabs');
+  live.forEach(g => { const b = document.createElement('button'); b.setAttribute('role','tab'); b.dataset.g = g.id;
+    b.innerHTML = `${g.label}<small>${g.sub}</small>`; b.onclick = () => { openTab(g.id); history.replaceState(null, '', '#' + g.id); }; nav.appendChild(b); });
+  function openTab(id){
+    live.forEach(g => g.secs.filter(shown).forEach(s => { el(s).hidden = g.id !== id; }));
+    nav.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.g === id));
+    window.dispatchEvent(new Event('resize'));   // charts drawn while hidden take their real width now
+  }
+  const want = location.hash.slice(1);
+  if (live.length) openTab(live.some(g => g.id === want) ? want : live[0].id); else nav.hidden = true;
+}
 </script></body></html>'''
 
 

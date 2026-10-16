@@ -32,7 +32,7 @@ pip install -e .[dashboard]       # optional: embeds plotly.js so the dashboard 
 pip install -e .[data]            # optional: the sdmx1 client, for pulling IMF data
 
 python -m sovrisk.cli --out outputs                         # RPF-01 result tables
-python -m sovrisk.dashboard --out outputs/dashboard.html    # one HTML page with every model
+python -m sovrisk.dashboard --out outputs/dashboard.html    # one HTML page, one tab per type of work
 python -m sovrisk.levers --list                             # RPF-01 stability levers
 python -m sovrisk.pfram --out outputs                       # RPF-02, illustrative projects
 python -m sovrisk.muni --town "Town E"                      # RPF-03, illustrative towns
