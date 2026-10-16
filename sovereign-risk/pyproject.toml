@@ -14,7 +14,7 @@ test = ["pytest>=8"]
 dashboard = ["plotly>=5"]
 
 [tool.setuptools]
-packages = ["sovrisk"]
+packages = ["sovrisk", "sovrisk.srdsf", "sovrisk.licdsf"]
 
 [tool.setuptools.package-data]
 sovrisk = ["assets/*"]
