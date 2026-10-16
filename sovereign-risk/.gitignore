@@ -5,3 +5,4 @@ outputs/
 *.xlsx
 !tests/golden/*.json
 *.egg-info/
+data/market_prices.csv

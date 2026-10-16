@@ -11,10 +11,10 @@ Every file written has the long format the model reads: country, partner, value_
                  financing need (% GDP) from the country's IMF/World Bank DSA, which has no API and is entered by hand
     remittances  World Bank bilateral remittance matrix (a spreadsheet download, no API), US$ -> % GDP
 
-The model keys countries by ISO3 (USA, CHN). IMF and BIS use ISO2 and Comtrade M49 numbers, so map codes to ISO3
-before writing: scripts/fetch_country_data.py does this from data/country_codes.csv, which ships empty and must be
-filled. GDP in US$ for the conversions comes from the World Bank (NY.GDP.MKTP.CD). Licences: IMF, BIS and World Bank data are
-reusable with attribution; UN Comtrade has its own terms, check them before redistributing.
+The model keys countries by ISO3 (USA, CHN), as the IMF SDMX portal does. BIS uses ISO2 and Comtrade M49 numbers,
+so map codes to ISO3 before writing: scripts/fetch_country_data.py does this from data/country_codes.csv, which
+ships empty and must be filled. GDP in US$ for the conversions comes from the World Bank (NY.GDP.MKTP.CD).
+Licences: IMF, BIS and World Bank data are reusable with attribution; UN Comtrade has its own terms, check them before redistributing.
 Nothing here makes up data: a failed download raises an error saying what to fetch and where to put it.
 """
 import csv
@@ -25,12 +25,7 @@ from pathlib import Path
 
 from .config import ROOT
 
-# Documented URL formats. The IMF moved its data to a new SDMX portal in 2025; the legacy SDMX_JSON service is kept
-# as a fallback. Both keys are A.{reporter}.{indicator}.{partner}: verify the dimension order on first run.
-IMF_SDMX = 'https://api.imf.org/external/sdmx/2.1/data/IMF.STA,IMTS/{key}?startPeriod={y0}&endPeriod={y1}'
-IMF_LEGACY = ('http://dataservices.imf.org/REST/SDMX_JSON.svc/CompactData/DOT/{key}'
-              '?startPeriod={y0}&endPeriod={y1}')
-IMF_EXPORTS = 'TXG_FOB_USD'
+# IMF trade comes through the IMF's SDMX API with the sdmx1 client (sovrisk/imf.py, IMTS dataflow).
 # BIS SDMX REST API. CBS key dimensions: FREQ.L_MEASURE.L_REP_CTY.CBS_BANK_TYPE.CBS_BASIS.L_POSITION.L_INSTR.
 # REM_MATURITY.CURR_TYPE_BOOK.L_CP_SECTOR.L_CP_COUNTRY. The default key (foreign claims, ultimate risk basis, all
 # sectors, all maturities) is a draft, to verify against the BIS key builder.
@@ -47,11 +42,12 @@ HS = {'oil': ['2709', '2710', '2711'],
       'copper': ['2603', '74'],
       'food': [f'{i:02d}' for i in range(1, 25)]}
 WB = 'https://api.worldbank.org/v2/country/{iso3}/indicator/{ind}?format=json&per_page=20000&date={y0}:{y1}'
+WB_COUNTRIES = 'https://api.worldbank.org/v2/country/all?format=json&per_page=400'   # the country list
 WB_GDP_USD = 'NY.GDP.MKTP.CD'
 WB_USD_DEBT_SHARE = 'DT.CUR.USDL.ZS'   # currency composition of PPG debt, U.S. dollars (%), IDS
 WB_REMITTANCE_MATRIX = 'https://www.worldbank.org/en/topic/migration/brief/remittances-data'   # page with the download
 
-HOSTS = {'imf': 'api.imf.org / dataservices.imf.org', 'bis': 'stats.bis.org', 'comtrade': 'comtradeapi.un.org',
+HOSTS = {'imf': 'api.imf.org', 'bis': 'stats.bis.org', 'comtrade': 'comtradeapi.un.org',
          'wb': 'api.worldbank.org'}
 FIELDS = ['country', 'partner', 'value_pct_gdp', 'year', 'source']
 
@@ -72,28 +68,13 @@ def _get(url, what):
 # --- IMF trade ---------------------------------------------------------------------------------------------------
 
 def fetch_imf_exports(reporter, partners, y0, y1):
-    """Annual goods exports (US$) from reporter to each partner. reporter and partners are IMF codes (ISO2)."""
-    key = f"A.{reporter}.{IMF_EXPORTS}.{'+'.join(partners)}"
+    """Annual goods exports (US$) from reporter to each partner, as [(reporter, partner, year, US$)]. The IMF SDMX
+    portal keys countries by ISO3, so reporter and partners are ISO3 codes."""
+    from . import imf
     try:
-        return parse_imf_legacy(json.loads(_get(IMF_LEGACY.format(key=key, y0=y0, y1=y1), 'IMF trade (legacy)')))
-    except DataUnavailable:
-        text = _get(IMF_SDMX.format(key=key, y0=y0, y1=y1), 'IMF trade (IMTS)')
-        raise DataUnavailable('The IMF SDMX 2.1 portal answered, but its response format has not been checked yet; '
-                              f'parse it by hand. First 200 characters: {text[:200]!r}')
-
-
-def parse_imf_legacy(d):
-    """CompactData JSON -> [(reporter, partner, year, US$)]. Values in the IMF series are in US$ millions."""
-    series = d['CompactData']['DataSet'].get('Series', [])
-    series = [series] if isinstance(series, dict) else series
-    out = []
-    for s in series:
-        obs = s.get('Obs', [])
-        for o in [obs] if isinstance(obs, dict) else obs:
-            if o.get('@OBS_VALUE') not in (None, ''):
-                out.append((s['@REF_AREA'], s['@COUNTERPART_AREA'], int(o['@TIME_PERIOD'][:4]),
-                            float(o['@OBS_VALUE']) * 1e6))
-    return out
+        return imf.imts_exports(reporter, partners, y0, y1)
+    except imf.IMFUnavailable as e:
+        raise DataUnavailable(f'IMF trade (IMTS): {e}') from e
 
 
 # --- BIS banks ---------------------------------------------------------------------------------------------------
@@ -141,12 +122,44 @@ def parse_comtrade(d, commodity):
 # --- World Bank --------------------------------------------------------------------------------------------------
 
 def fetch_wb(iso3, indicator, y0, y1):
-    d = json.loads(_get(WB.format(iso3=iso3, ind=indicator, y0=y0, y1=y1), f'World Bank {indicator}'))
-    return parse_wb(d)
+    """One World Bank indicator for one country (iso3, or 'all'), reading every page of the response."""
+    url = WB.format(iso3=iso3, ind=indicator, y0=y0, y1=y1)
+    out, page, pages = {}, 1, 1
+    while page <= pages:
+        d = json.loads(_get(f'{url}&page={page}', f'World Bank {indicator}'))
+        out.update(parse_wb(d))
+        pages = int((d[0] or {}).get('pages') or 1)
+        page += 1
+    return out
+
+
+def fetch_wb_countries():
+    """The World Bank's country list (api.worldbank.org/v2/country/all), every page: one dict per economy or
+    aggregate with iso3, iso2, name, region, income and aggregate (True for regional and income groups)."""
+    out, page, pages = [], 1, 1
+    while page <= pages:
+        d = json.loads(_get(f'{WB_COUNTRIES}&page={page}', 'World Bank country list'))
+        out += parse_wb_countries(d)
+        pages = int((d[0] or {}).get('pages') or 1)
+        page += 1
+    return out
+
+
+def parse_wb_countries(d):
+    """World Bank country-list JSON -> [{iso3, iso2, name, region, income, aggregate}]. Aggregates (World, Euro
+    area, income groups) have region id 'NA'."""
+    if d and isinstance(d[0], dict) and 'message' in d[0]:
+        raise DataUnavailable(f"World Bank API error: {d[0]['message']}")
+    return [{'iso3': c['id'], 'iso2': c['iso2Code'], 'name': c['name'].strip(), 'region': c['region']['value'].strip(),
+             'income': c['incomeLevel']['value'].strip(), 'aggregate': c['region']['id'] == 'NA'}
+            for c in (d[1] if len(d) > 1 and d[1] else [])]
 
 
 def parse_wb(d):
-    """World Bank API JSON -> {(iso3, year): value}."""
+    """World Bank API JSON ([page info, rows]) -> {(iso3, year): value}. An error reply (a message and no rows,
+    e.g. for an unknown indicator) raises DataUnavailable rather than reading as no data."""
+    if d and isinstance(d[0], dict) and 'message' in d[0]:
+        raise DataUnavailable(f"World Bank API error: {d[0]['message']}")
     if len(d) < 2 or d[1] is None:
         return {}
     return {(r['countryiso3code'], int(r['date'])): float(r['value']) for r in d[1]

@@ -1,35 +1,45 @@
 """Data connectors for the default-history panel (default_fit) and the RPF-05 early-warning panel (ews). NOT YET RUN:
-the build environment's network policy blocks these hosts (www.imf.org, api.worldbank.org, stats.bis.org). Check
-the outputs on first run.
+the build environment's network policy blocks these hosts (api.imf.org, api.worldbank.org, stats.bis.org). Check
+the outputs on first run. IMF series come through the IMF's SDMX API with the sdmx1 client (sovrisk/imf.py).
 
 imf_series and wb_series return rows of (iso3, year, value); bis_credit_gap returns (iso2, year, value);
 build_panel and build_ews_panel return dict rows. Default dates (the BoC-BoE database) are passed in, not fetched.
 Licences: IMF, World Bank and BIS data are reusable with attribution; check the Bank of Canada database terms
 before redistributing.
 """
-import json
 import urllib.request
 
-IMF = 'https://www.imf.org/external/datamapper/api/v1/{ind}'
 WB = 'https://api.worldbank.org/v2/country/all/indicator/{ind}?format=json&per_page=20000&date={y0}:{y1}'
 
 IMF_SERIES = {'debt_gdp': 'GGXWDG_NGDP', 'growth': 'NGDP_RPCH', 'inflation': 'PCPIPCH', 'ca_gdp': 'BCA_NGDPD'}
 WB_SERIES = {'reserves_months': 'FI.RES.TOTL.MO'}
 
 
-def _get(url):
-    with urllib.request.urlopen(url, timeout=60) as r:
-        return json.loads(r.read().decode())
+def imf_series(ind, countries=()):
+    """One IMF World Economic Outlook indicator for every country (or the ISO3 codes given), via sovrisk.imf."""
+    from . import imf
+    return imf.weo_series(ind, countries)
 
 
-def imf_series(ind):
-    d = _get(IMF.format(ind=ind))['values'][ind]
-    return [(iso, int(y), v) for iso, ys in d.items() for y, v in ys.items() if v is not None]
+def wb_economies():
+    """ISO3 codes of the economies in the World Bank's country list (api.worldbank.org/v2/country/all), without the
+    regional and income aggregates. Fetched once per run."""
+    global _ECONOMIES
+    if _ECONOMIES is None:
+        from .spillover_data import fetch_wb_countries
+        _ECONOMIES = {c['iso3'] for c in fetch_wb_countries() if not c['aggregate']}
+    return _ECONOMIES
+
+
+_ECONOMIES = None
 
 
 def wb_series(ind, y0=1980, y1=2026):
-    d = _get(WB.format(ind=ind, y0=y0, y1=y1))
-    return [(r['countryiso3code'], int(r['date']), r['value']) for r in d[1] if r['value'] is not None and r['countryiso3code']]
+    """One World Bank indicator for every economy (the API's country/all endpoint, every page), with the regional
+    and income aggregates dropped using the country list."""
+    from .spillover_data import fetch_wb
+    keep = wb_economies()
+    return [(iso, y, v) for (iso, y), v in sorted(fetch_wb('all', ind, y0, y1).items()) if iso in keep]
 
 
 def build_panel(default_events, y0=1985, y1=2025):
@@ -60,10 +70,10 @@ def build_panel(default_events, y0=1985, y1=2025):
 
 
 # ---- RPF-05 early-warning panel (sovrisk/ews.py) -------------------------------------------------------------------
-# NOT YET RUN: www.imf.org, api.worldbank.org and stats.bis.org are blocked in the build environment. The URL formats
+# NOT YET RUN: api.imf.org, api.worldbank.org and stats.bis.org are blocked in the build environment. The URL formats
 # follow each provider's documented API; check the first real response. Nothing here invents or fills data: a series
 # that cannot be fetched raises EWSFetchError, and a cell with no observation is left blank.
-#   IMF DataMapper  BCA_NGDPD  current account, % of GDP              -> ca_gdp
+#   IMF WEO (SDMX)  BCA_NGDPD  current account, % of GDP              -> ca_gdp
 #                   PCPIPCH    inflation, average consumer prices, %  -> inflation
 #   World Bank WDI  FI.RES.TOTL.MO     total reserves in months of imports             -> reserves_months
 #                   PX.REX.REER        real effective exchange rate index (2010 = 100)  -> reer (ews.py derives reer_dev)
@@ -89,7 +99,7 @@ def _ews_fetch(fn, what, *args):
         return fn(*args)
     except Exception as e:  # network refusal, HTTP error, or an unexpected response shape
         raise EWSFetchError(f'could not fetch {what}: {type(e).__name__}: {e}. If the host is blocked, run where '
-                            'www.imf.org, api.worldbank.org and stats.bis.org are reachable; no data was written.') from e
+                            'api.imf.org, api.worldbank.org and stats.bis.org are reachable; no data was written.') from e
 
 
 def bis_credit_gap(iso2, y0=1980, y1=2026):
@@ -117,14 +127,15 @@ def bis_credit_gap(iso2, y0=1980, y1=2026):
 
 
 def build_ews_panel(path=None, iso2_by_iso3=None, countries=None, y0=1980, y1=2026):
-    """Fetch the early-warning series and write data/ews_panel.csv (or path). countries: ISO3 codes to keep (World
-    Bank 'all' includes regional aggregates). iso2_by_iso3: {ISO3: ISO2} for the BIS gap; without it the BIS is
-    skipped and ews.py computes gaps from credit_gdp. Returns the rows written."""
+    """Fetch the early-warning series and write data/ews_panel.csv (or path). countries: ISO3 codes to keep (default:
+    every economy in the World Bank country list; regional and income aggregates are dropped). iso2_by_iso3:
+    {ISO3: ISO2} for the BIS gap; without it the BIS is skipped and ews.py computes gaps from credit_gdp. Returns the
+    rows written."""
     import csv
     from pathlib import Path
     raw = {}
     for col, ind in EWS_IMF.items():
-        for iso, y, v in _ews_fetch(imf_series, f'IMF DataMapper {ind} ({IMF.format(ind=ind)})', ind):
+        for iso, y, v in _ews_fetch(imf_series, f'IMF WEO {ind} (api.imf.org, SDMX)', ind, tuple(countries or ())):
             raw.setdefault((iso, y), {})[col] = v
     for col, ind in EWS_WB.items():
         for iso, y, v in _ews_fetch(wb_series, f'World Bank {ind} ({WB.format(ind=ind, y0=y0, y1=y1)})', ind, y0, y1):
@@ -132,9 +143,10 @@ def build_ews_panel(path=None, iso2_by_iso3=None, countries=None, y0=1980, y1=20
     for iso3, iso2 in (iso2_by_iso3 or {}).items():
         for _, y, v in bis_credit_gap(iso2, y0, y1):
             raw.setdefault((iso3, y), {})['credit_gap'] = v
+    keep = set(countries) if countries else wb_economies()
     rows = []
     for (iso, y), d in sorted(raw.items()):
-        if not y0 <= y <= y1 or (countries and iso not in countries):
+        if not y0 <= y <= y1 or iso not in keep:
             continue
         st = d.pop('st_debt_pct_reserves', None)
         d['reserves_std'] = 10000 / st if st else None

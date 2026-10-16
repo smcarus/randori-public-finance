@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-made sample in the shape of an IMF IMTS response. Not real data. -->
+<message:GenericData xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:generic="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic" xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+<message:Header><message:ID>T</message:ID><message:Test>true</message:Test><message:Prepared>2026-01-01T00:00:00</message:Prepared><message:Sender id="IMF"/><message:Structure structureID="S1" dimensionAtObservation="TIME_PERIOD"><common:Structure><Ref agencyID="IMF.STA" id="IMTS" version="1.0"/></common:Structure></message:Structure></message:Header>
+<message:DataSet structureRef="S1">
+<generic:Series><generic:SeriesKey><generic:Value id="COUNTRY" value="AAA"/><generic:Value id="INDICATOR" value="XG_FOB_USD"/><generic:Value id="COUNTERPART_COUNTRY" value="BBB"/><generic:Value id="FREQUENCY" value="A"/></generic:SeriesKey>
+<generic:Attributes><generic:Value id="UNIT_MULT" value="6"/></generic:Attributes>
+<generic:Obs><generic:ObsDimension value="2023"/><generic:ObsValue value="6000.5"/></generic:Obs>
+<generic:Obs><generic:ObsDimension value="2024"/><generic:ObsValue value="NaN"/></generic:Obs>
+</generic:Series>
+<generic:Series><generic:SeriesKey><generic:Value id="COUNTRY" value="AAA"/><generic:Value id="INDICATOR" value="XG_FOB_USD"/><generic:Value id="COUNTERPART_COUNTRY" value="CCC"/><generic:Value id="FREQUENCY" value="A"/></generic:SeriesKey>
+<generic:Obs><generic:ObsDimension value="2023"/><generic:ObsValue value="8000"/></generic:Obs>
+</generic:Series>
+</message:DataSet></message:GenericData>
