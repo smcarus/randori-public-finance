@@ -27,6 +27,7 @@ their golden values use Randori's analyst inputs, so they are not in this public
 | `sovrisk/dashboard.py` | (all) | One HTML page: colour-coded risk map, ranking, Monte Carlo loss, and per-country pillars, scenarios, sensitivity, default PD, insurance perils, bond recovery and lever toggles |
 | `sovrisk/pfram.py` | PFRAM 2.0 (IMF and World Bank) | PPP fiscal risk: private partner's income statement and cash waterfall, government accrual and cash accounts, balance sheet, debt and revenue guarantees, early termination, macro shocks, risk matrix, and the portfolio's effect on deficit and debt. ILLUSTRATIVE projects in `data/pfram_projects.yaml` |
 | `sovrisk/muni.py` | (Python only) | M-15 municipal credit scorecard: 0-100 risk score and grade for a US city or town in any state, with Massachusetts practice as the administration benchmark, from economy, finances, debt and governance indicators (`rulebook/muni.yaml`), recession and pension stress cases, peer percentiles. ILLUSTRATIVE towns in `data/muni_towns.csv`; not a credit rating |
+| `sovrisk/ews.py` | (Python only) | M-22 macro early-warning panel: green/amber/red ratings on reserves, current account, REER, credit gap, inflation and gross financing need (`rulebook/ews.yaml`), own-history percentiles, warning score weighted by the signals method. No country data in the repository |
 
 ## Layout
 
@@ -53,6 +54,7 @@ python -m sovrisk.dashboard --out outputs/dashboard.html
 python -m sovrisk.levers --list
 python -m sovrisk.pfram --out outputs   # PPP fiscal risk, illustrative projects
 python -m sovrisk.muni --town "Town E"   # municipal scorecard, illustrative towns
+python -m sovrisk.ews --country ARG     # early-warning panel; needs data/ews_panel.csv
 ```
 
 ## Differences from the workbook
@@ -81,6 +83,27 @@ It is Randori's own model, not a credit rating, and is untested: the ten towns i
 hypothetical, spread across several states. Planned data sources for real towns: the state's local-government finance
 data (in MA, the DLS Municipal Databank), Census of Governments and ACS, BLS local unemployment, state pension
 valuations (PERAC in MA) and audited financial statements on MSRB EMMA.
+
+## Macro early-warning panel (sovrisk.ews, M-22 v0.1)
+
+Rates seven indicators green, amber or red against draft thresholds in `rulebook/ews.yaml`: reserves in months of
+imports (amber below 4, red below 3), reserves over short-term external debt (150% / 100%), current account (-3% / -5%
+of GDP), REER against its previous 10-year average (+10% / +20%), credit-to-GDP gap (2pp / 10pp), inflation
+(10% / 20%) and, optionally, gross financing need from the debt sustainability module (10% / 15% of GDP). Each value
+also gets its percentile in the country's own history. The warning score (0 all green, 100 all red) weights the
+indicators by the signals method of Kaminsky, Lizondo and Reinhart: over the crisis dates in `data/crisis_dates.csv`
+(country, year, type), each indicator's noise-to-signal ratio uses a 2-year window before crisis start; weight is
+1/NSR normalised, and indicators with NSR of 1 or more are dropped. Without crisis dates the rulebook's equal weights
+apply. A missing indicator drops out and the weights are rescaled.
+
+Where the BIS publishes no credit gap, it is computed from credit-to-GDP with a one-sided HP filter (the trend at each
+year uses data up to that year only), as the BIS does. The BIS uses lambda 400,000 on quarterly data; the panel is
+annual, so it uses 400,000 / 4^4 = 1,562.5 (Ravn-Uhlig frequency scaling).
+
+It runs from `data/ews_panel.csv` (country, year, indicator columns), which is not in the repository and is never
+filled with made-up data: build it with `sovrisk.connectors.build_ews_panel()` from IMF DataMapper, World Bank WDI and
+IDS and the BIS credit-gap API (not yet run: those hosts are blocked in the build environment). Untested; no dashboard
+section until there is real data.
 
 ## PFRAM 2.0 port (sovrisk.pfram)
 
@@ -140,6 +163,23 @@ matches all 199,437 formula cells, errors included; and under changed macro path
 settings it agrees on every cell with an independent evaluator of the template's own formulas
 (`tests/licdsf_oracle.py`), since LibreOffice cannot recalculate this template. The template's sample is real
 country data, so its golden files and the tests that need them are kept private.
+
+## Spillover network (sovrisk.spillover, M-23 v0.1)
+
+Estimates how a shock abroad (US recession, China slowdown, oil or copper price fall, US rates +200 bp) hits each
+country's GDP through five channels: trade, commodities, banks, US dollar debt (rates) and remittances. The first
+round is shock x exposure x the channel's elasticities; the second round passes those GDP losses through the trade
+matrix, damped each round until they die out. Results come split by channel and by round.
+
+    python -m sovrisk.spillover --list
+    python -m sovrisk.spillover --scenario us_recession --rounds
+
+Elasticities, damping and scenarios are in `rulebook/spillover.yaml`, each with a note naming the literature it
+draws on; all are drafts, to verify. The model reads exposures from `data/spill_trade.csv`,
+`spill_commodities.csv`, `spill_banks.csv`, `spill_rates.csv` and `spill_remittances.csv` (country, partner,
+value_pct_gdp, year, source) and says which are missing. None exist yet: `sovrisk/spillover_data.py` holds
+fetch and parse functions for IMF trade (IMTS), BIS consolidated banking, UN Comtrade and World Bank data, but
+these hosts are blocked here, so they have never been run. Untested; the tests use hand-made inputs only.
 
 ## What is not here
 
