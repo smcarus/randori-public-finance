@@ -21,7 +21,7 @@ pull request anyone can read.
 | Data | `data/` | Input CSVs and YAML. Analyst inputs are header-only templates in the public repo; illustrative rows are labelled. RPF-05 and RPF-06 data files are not in the repo until real data is loaded (see [DATA.md](DATA.md)) |
 | Connectors | `imf.py`, `connectors.py`, `spillover_data.py`, `market.py` | Fetch and parse functions for the IMF (its SDMX API, through the sdmx1 client `sdmx.Client('IMF_DATA')`), World Bank, BIS, UN Comtrade and Yahoo Finance (yfinance; market prices, kept private). Not yet run against live responses: those hosts are blocked in the build environment |
 | Engines | one module or package per model | The calculations (below). `config.py` loads the rulebook and data files and defines `ROOT`, the repo folder every engine reads from |
-| Outputs | `cli.py`, `dashboard.py`, each engine's `main()` | Result tables in `outputs/`, one self-contained HTML dashboard, and a console report per engine |
+| Outputs | `cli.py`, `dashboard.py`, `serve.py`, `live.py`, each engine's `main()` | Result tables in `outputs/`, one self-contained HTML dashboard (or the same page served locally by `serve.py`, which adds live per-country pulls through `live.py`), and a console report per engine |
 
 ## Engines
 

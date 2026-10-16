@@ -29,6 +29,15 @@ Market prices (US Treasury yields, oil, copper, exchange rates) come from Yahoo 
 value, unit, source`. Yahoo's terms forbid redistribution, so the file is in `.gitignore` and stays in the private
 copy. Yahoo has no sovereign CDS: `data/market_spreads.csv` is still entered by hand.
 
+## Live pulls for one country
+
+`python -m sovrisk.serve` serves the dashboard at http://localhost:8080. In its Live country data tab, pick a country
+and the server pulls that country's IMF WEO series, World Bank series, BIS credit gap and Yahoo Finance prices
+(`sovrisk/live.py`), then rates it on the early-warning panel. Each feed is pulled on its own, so a blocked or failing
+source is reported and the others still show. A pull is cached in `outputs/live/<ISO3>.json` (not committed) and
+nothing is written to `data/`. `python -m sovrisk.live ARG --fx ARS` does the same pull from the command line. The
+server listens on your machine only (127.0.0.1). It has not yet run against live responses: check the first pull by eye.
+
 ## Route 2: enter it by hand (works today)
 
 Copy the columns below into a spreadsheet, fill the rows from the sources named, and save as CSV in `data/`.
