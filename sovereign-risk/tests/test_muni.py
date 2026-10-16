@@ -60,10 +60,24 @@ def test_percentiles_run_0_to_100():
 
 def test_golden_illustrative_scores():
     r = M.run_all()['towns']
-    assert r['Town A']['base']['score'] == pytest.approx(9.4, abs=0.05)
-    assert r['Town F']['base']['score'] == pytest.approx(80.8, abs=0.05)
+    assert r['Town A']['base']['score'] == pytest.approx(9.3, abs=0.05)
+    assert r['Town F']['base']['score'] == pytest.approx(81.2, abs=0.05)
     assert [n for n, _ in sorted(r.items(), key=lambda kv: kv[1]['base']['score'])][:3] == ['Town A', 'Town C', 'Town B']
 
 
 def test_all_towns_are_marked_illustrative():
     assert all('ILLUSTRATIVE' in t['note'] for t in D['towns'])
+
+
+def test_any_state_with_ma_benchmark():
+    """Towns come from several states; a state with no levy limit drops that indicator; administration is scored
+    against the Massachusetts benchmark for every town."""
+    r = M.run_all()['towns']
+    assert len({t['state'] for t in r.values()}) > 3 and RB['benchmark_state'] == 'Massachusetts'
+    b = r['Town B']['base']
+    assert r['Town B']['state'] == 'CT' and b['indicators']['excess_levy_capacity']['score'] is None
+    assert b['factors']['finances']['coverage'] == pytest.approx(0.85)
+    assert r['Town A']['base']['benchmark'] == {'state': 'Massachusetts', 'met': 8, 'of': 8, 'gaps': []}
+    d = r['Town D']['base']['benchmark']
+    assert d['met'] == 0 and len(d['gaps']) == 8
+    assert all('benchmark' in i for i in RB['indicators'] if i['factor'] == 'governance' and i['id'] != 'audit_findings')

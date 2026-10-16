@@ -569,7 +569,7 @@ const SER = dark ? ['#3987e5','#d95926','#199e70'] : ['#2a78d6','#eb6834','#1baf
 const surf = dark ? '#1b2129' : '#fff', SYM = ['circle', 'diamond'];
 const tn = Object.keys(U.towns).sort((a,b)=>U.towns[a].base.score-U.towns[b].base.score);
 document.getElementById('mumodel').textContent = `${U.model} · illustrative towns · untested · not a credit rating`;
-document.getElementById('musub').textContent = `${tn.length} hypothetical Massachusetts towns scored on economy, finances, debt and governance (rulebook/muni.yaml). `
+document.getElementById('musub').textContent = `${tn.length} hypothetical towns in several states, scored on economy, finances, debt and governance (rulebook/muni.yaml). Administration is scored against Massachusetts practice, the benchmark for every state. `
   + U.cases.map(c=>`${c}: ${U.stress_notes[c].join('; ')}.`).join(' ');
 const rk = tn.slice().reverse();
 Plotly.newPlot('murank', [{type:'bar', orientation:'h', name:'Base case', y:rk, x:rk.map(n=>U.towns[n].base.score), marker:{color:SER[0]},
@@ -579,14 +579,14 @@ Plotly.newPlot('murank', [{type:'bar', orientation:'h', name:'Base case', y:rk, 
     marker:{color:SER[i+1], size:10, symbol:SYM[i%2], line:{color:surf, width:2}}, hovertemplate:`%{y}: %{x:.1f}<extra>${c}</extra>`}))],
   L({margin:{l:70,r:24,t:10,b:30}, xaxis:{range:[0,100], gridcolor:grid}, legend:{orientation:'h', y:-0.12}, hovermode:'y unified'}), cfg);
 document.getElementById('murank').on('plotly_click', e => showMuni(e.points[0].y));
-const mp = document.getElementById('mupick'); tn.forEach(n => mp.add(new Option(`${n} (${U.towns[n].profile})`, n)));
+const mp = document.getElementById('mupick'); tn.forEach(n => mp.add(new Option(`${n} (${U.towns[n].profile}${U.towns[n].state ? ', ' + U.towns[n].state : ''})`, n)));
 mp.onchange = () => showMuni(mp.value);
 function showMuni(n){
   const t = U.towns[n], b = t.base; mp.value = n;
   document.getElementById('muname').textContent = n;
   document.getElementById('mufh').textContent = `Factor scores: ${n}`;
   const k = [['Risk score', num(b.score)], ['Grade (1-10)', b.grade], ...U.cases.map(c=>[c, num(t.stress[c].score)]),
-    ['Profile', `<span style="font-size:16px">${t.profile}</span>`], ['Population', (t.population||0).toLocaleString('en-US')], ['Data coverage', pct(b.coverage,0)]];
+    ['Profile', `<span style="font-size:16px">${t.profile}${t.state ? ', ' + t.state : ''}</span>`], ['MA administration benchmark', `${b.benchmark.met} of ${b.benchmark.of} met`], ['Population', (t.population||0).toLocaleString('en-US')], ['Data coverage', pct(b.coverage,0)]];
   document.getElementById('mukpis').innerHTML = k.map(([a,v])=>`<div class="kpi"><span>${a}</span><b>${v}</b></div>`).join('');
   const fk = Object.keys(U.factors);
   Plotly.react('mufac', [['Base case', b], ...U.cases.map(c=>[c, t.stress[c]])].map(([name, s], i)=>({type:'bar', orientation:'h', name,

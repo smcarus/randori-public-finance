@@ -1,12 +1,16 @@
-"""M-15 municipal credit scorecard: a 0-100 risk score for a Massachusetts city or town.
+"""M-15 municipal credit scorecard: a 0-100 risk score for a US city or town, in any state.
 
     python -m sovrisk.muni                 # score every town in data/muni_towns.csv
     python -m sovrisk.muni --town "Town E" # one town, factor by factor
     python -m sovrisk.muni --out outputs   # muni_scores.csv and muni_indicators.csv
 
 Scores run from 0 (lowest risk) to 100 (highest risk), like the sovereign scorecard, with grades 1-10. Indicators,
-thresholds, weights and stress cases live in rulebook/muni.yaml. Randori's own model, drawing on the factor families
-in public rating methods. NOT A CREDIT RATING. Version 0.1 runs on ILLUSTRATIVE towns only and is untested.
+thresholds, weights and stress cases live in rulebook/muni.yaml.
+Massachusetts practice is the gold standard for administration: the governance factor scores every town against what
+MA requires or recommends (free cash certification, five-year revaluation review, PERAC full-funding schedules, OPEB
+trusts, written reserve policies), whatever its own state requires. A state with no property tax limit leaves the
+levy-capacity indicator blank, and it drops out. Randori's own model, drawing on the factor families
+in public rating methods. NOT A CREDIT RATING. Version 0.2 runs on ILLUSTRATIVE towns only and is untested.
 """
 import argparse
 import csv
@@ -17,7 +21,7 @@ import yaml
 from .config import ROOT, read_csv
 from .scoring import _interp
 
-MODEL = 'M-15 v0.1'
+MODEL = 'M-15 v0.2'
 
 
 def load(root=ROOT):
@@ -87,7 +91,17 @@ def score_town(rb, values):
                 r['points'] = (f['weight'] / fw) * (r['weight'] / f['coverage']) * r['score'] \
                     if r['score'] is not None and f['coverage'] else None
     return {'score': score, 'grade': grade(score), 'factors': factors, 'indicators': rows,
-            'coverage': sum(f['weight'] * f['coverage'] for f in factors.values())}
+            'coverage': sum(f['weight'] * f['coverage'] for f in factors.values()),
+            'benchmark': benchmark(rb, rows)}
+
+
+def benchmark(rb, rows):
+    """How many administration practices meet the Massachusetts standard, out of those with data. A yes/no practice
+    meets it with a yes; a numeric one (audit timing, findings) when it is at or better than the second threshold."""
+    ids = [i['id'] for i in rb['indicators'] if i['factor'] == 'governance']
+    have = [i for i in ids if rows[i]['score'] is not None]
+    return {'state': rb.get('benchmark_state', 'Massachusetts'), 'met': sum(rows[i]['score'] <= 25 for i in have),
+            'of': len(have), 'gaps': [rows[i]['label'] for i in have if rows[i]['score'] > 25]}
 
 
 def stressed_values(rb, values, case):
@@ -122,7 +136,7 @@ def run_all(root=ROOT):
     res = {}
     for t in d['towns']:
         base = score_town(rb, t)
-        res[t['town']] = {'profile': t.get('profile'), 'population': t.get('population'),
+        res[t['town']] = {'state': t.get('state'), 'profile': t.get('profile'), 'population': t.get('population'),
                           'fiscal_year': t.get('fiscal_year'), 'note': t.get('note', ''), 'base': base,
                           'stress': {c: score_town(rb, stressed_values(rb, t, c)) for c in rb.get('stress', {})},
                           'percentile': pct[t['town']]}
@@ -143,11 +157,16 @@ def main(argv=None):
             continue
         b = t['base']
         st = ', '.join(f"{c} {t['stress'][c]['score']:.1f}" for c in cases)
-        print(f"{name:10s} {t['profile'] or '':18s} score {b['score']:5.1f} grade {b['grade']:2d}  ({st})")
+        print(f"{name:10s} {t['state'] or '':3s}{t['profile'] or '':18s} score {b['score']:5.1f} grade {b['grade']:2d}  ({st})")
         if a.town:
+            bm = b['benchmark']
+            print(f"    Administration: {bm['met']} of {bm['of']} {bm['state']} benchmark practices met")
             for k, f in b['factors'].items():
                 print(f"    {f['label']:28s} {f['score']:5.1f}  weight {f['weight']:.0%}")
             for iid, x in sorted(b['indicators'].items(), key=lambda kv: -(kv[1]['points'] or 0)):
+                if x['score'] is None:
+                    print(f"      {x['label'][:44]:44s} {'':>8s} {x['unit'][:22]:22s} no data, drops out")
+                    continue
                 print(f"      {x['label'][:44]:44s} {str(x['value']):>8s} {x['unit'][:22]:22s} "
                       f"score {x['score']:5.1f}  adds {x['points']:4.1f} pts")
     if a.out:
@@ -155,11 +174,11 @@ def main(argv=None):
         out.mkdir(parents=True, exist_ok=True)
         with open(out / 'muni_scores.csv', 'w', newline='') as f:
             w = csv.writer(f)
-            w.writerow(['town', 'model', 'score', 'grade'] + [f'{k}_score' for k in rb['factors']]
+            w.writerow(['town', 'state', 'model', 'score', 'grade'] + [f'{k}_score' for k in rb['factors']]
                        + [f'{c} score' for c in cases])
             for name, t in r['towns'].items():
                 b = t['base']
-                w.writerow([name, MODEL, b['score'], b['grade']] + [b['factors'][k]['score'] for k in rb['factors']]
+                w.writerow([name, t['state'], MODEL, b['score'], b['grade']] + [b['factors'][k]['score'] for k in rb['factors']]
                            + [t['stress'][c]['score'] for c in cases])
         with open(out / 'muni_indicators.csv', 'w', newline='') as f:
             w = csv.writer(f)

@@ -26,7 +26,7 @@ their golden values use Randori's analyst inputs, so they are not in this public
 | `sovrisk/levers.py` | (Python only) | Stability levers (insurance, reinsurance, credit, banking, revenue, investor protection) from `rulebook/levers.yaml`; exact re-run with any set switched on. ILLUSTRATIVE magnitudes |
 | `sovrisk/dashboard.py` | (all) | One HTML page: colour-coded risk map, ranking, Monte Carlo loss, and per-country pillars, scenarios, sensitivity, default PD, insurance perils, bond recovery and lever toggles |
 | `sovrisk/pfram.py` | PFRAM 2.0 (IMF and World Bank) | PPP fiscal risk: private partner's income statement and cash waterfall, government accrual and cash accounts, balance sheet, debt and revenue guarantees, early termination, macro shocks, risk matrix, and the portfolio's effect on deficit and debt. ILLUSTRATIVE projects in `data/pfram_projects.yaml` |
-| `sovrisk/muni.py` | (Python only) | M-15 municipal credit scorecard: 0-100 risk score and grade for a Massachusetts city or town from economy, finances, debt and governance indicators (`rulebook/muni.yaml`), recession and pension stress cases, peer percentiles. ILLUSTRATIVE towns in `data/muni_towns.csv`; not a credit rating |
+| `sovrisk/muni.py` | (Python only) | M-15 municipal credit scorecard: 0-100 risk score and grade for a US city or town in any state, with Massachusetts practice as the administration benchmark, from economy, finances, debt and governance indicators (`rulebook/muni.yaml`), recession and pension stress cases, peer percentiles. ILLUSTRATIVE towns in `data/muni_towns.csv`; not a credit rating |
 
 ## Layout
 
@@ -63,14 +63,24 @@ country's stress rows in Debt Scenarios: Venezuela took Nigeria's debt path, Ecu
 and Zambia took Zimbabwe's. These countries now show the debt indicators as blank. Their country scores
 were already blank, because they have no other inputs, so no headline result changed.
 
-## Municipal credit scorecard (sovrisk.muni, M-15 v0.1)
+## Municipal credit scorecard (sovrisk.muni, M-15 v0.2)
 
-Scores run from 0 (lowest risk) to 100 (highest), with grades 1-10, as in the sovereign scorecard. Draft weights:
-economy and tax base 30%, financial performance 30%, debt and liabilities 30%, management and governance 10%. The
-indicators, thresholds, weights and stress cases are all in `rulebook/muni.yaml`; a missing indicator drops out and
-its factor's weights are rescaled. It is Randori's own model, not a credit rating, and is untested: the ten towns in
-`data/muni_towns.csv` are hypothetical. Planned data sources for real towns: the MA DLS Municipal Databank, Census
-ACS, BLS local unemployment, PERAC and audited financial statements on MSRB EMMA.
+Scores a city or town in any US state from 0 (lowest risk) to 100 (highest), with grades 1-10, as in the sovereign
+scorecard. Draft weights: economy and tax base 30%, financial performance 30%, debt and liabilities 30%, management and
+governance 10%. The indicators, thresholds, weights and stress cases are all in `rulebook/muni.yaml`; a missing
+indicator drops out and its factor's weights are rescaled.
+
+Massachusetts is the gold standard for administration. The governance factor scores every town against what MA
+requires or recommends, whatever its own state requires: free cash certification, state review of revaluations every
+five years, PERAC schedules to full pension funding, OPEB trusts, written reserve policies, five-year capital plans and
+timely audits. Each town shows how many of these eight practices it meets. Economic and financial indicators use
+generic definitions (full market value rather than MA equalized valuation, for example); where a state sets no
+property tax limit, the levy-capacity indicator is left blank and drops out.
+
+It is Randori's own model, not a credit rating, and is untested: the ten towns in `data/muni_towns.csv` are
+hypothetical, spread across several states. Planned data sources for real towns: the state's local-government finance
+data (in MA, the DLS Municipal Databank), Census of Governments and ACS, BLS local unemployment, state pension
+valuations (PERAC in MA) and audited financial statements on MSRB EMMA.
 
 ## PFRAM 2.0 port (sovrisk.pfram)
 

@@ -1,11 +1,11 @@
-town,profile,population,fiscal_year,eqv_per_capita,income_ratio,unemployment,pop_change_10y,top10_taxpayers,reserves_pct,operating_margin,excess_levy_capacity,state_aid_share,net_debt_pct_eqv,debt_service_pct_exp,pension_funded,opeb_pct_rev,payout_10y,reserve_policy,capital_plan,audit_days,audit_findings,note
-Town A,Affluent suburb,28000,2025,310,165,2.8,6.5,4.0,18.5,2.1,6.0,6,0.9,5.5,72,40,78,yes,yes,160,0,ILLUSTRATIVE: not a real municipality
-Town B,Suburb,41000,2025,215,122,3.6,4.2,6.5,14.0,1.2,3.5,12,1.3,7.0,68,65,72,yes,yes,190,0,ILLUSTRATIVE: not a real municipality
-Town C,Resort town,9000,2025,420,105,5.5,1.0,14.0,22.0,3.0,9.0,4,0.7,4.0,74,30,65,yes,no,240,0,ILLUSTRATIVE: not a real municipality
-Town D,Small rural town,5200,2025,120,88,4.9,-2.5,9.0,8.5,0.4,1.2,28,1.6,6.5,61,85,70,no,no,300,1,ILLUSTRATIVE: not a real municipality
-Town E,Gateway city,62000,2025,95,72,6.8,1.5,16.0,7.0,-0.8,0.6,46,2.6,8.5,55,140,58,yes,yes,255,1,ILLUSTRATIVE: not a real municipality
-Town F,Mill town,18500,2025,105,78,6.2,-4.0,21.0,4.5,-2.5,0.3,42,2.2,10.5,49,165,52,no,no,330,2,ILLUSTRATIVE: not a real municipality
-Town G,Growing exurb,16000,2025,175,110,3.9,9.5,7.0,11.0,0.9,2.5,18,2.8,11.0,66,70,55,yes,yes,200,0,ILLUSTRATIVE: not a real municipality
-Town H,Regional center,34000,2025,140,95,4.6,2.0,11.0,9.5,0.2,1.8,25,1.9,8.0,63,95,66,yes,no,230,0,ILLUSTRATIVE: not a real municipality
-Town I,College town,23000,2025,160,98,3.4,3.0,24.0,12.5,1.0,4.0,15,1.5,6.0,70,55,74,yes,yes,180,0,ILLUSTRATIVE: not a real municipality
-Town J,Coastal city,47000,2025,190,90,5.1,0.5,13.0,6.0,-1.2,1.0,22,3.4,12.5,58,120,60,no,yes,270,1,ILLUSTRATIVE: not a real municipality
+town,state,profile,population,fiscal_year,eqv_per_capita,income_ratio,unemployment,pop_change_10y,top10_taxpayers,reserves_pct,operating_margin,excess_levy_capacity,state_aid_share,net_debt_pct_eqv,debt_service_pct_exp,pension_funded,opeb_pct_rev,payout_10y,reserve_policy,capital_plan,audit_days,audit_findings,balance_certified,valuation_review,pension_full_funding_plan,opeb_trust,note
+Town A,MA,Affluent suburb,28000,2025,310,165,2.8,6.5,4.0,18.5,2.1,6.0,6,0.9,5.5,72,40,78,yes,yes,160,0,yes,yes,yes,yes,ILLUSTRATIVE: not a real municipality
+Town B,CT,Suburb,41000,2025,215,122,3.6,4.2,6.5,14.0,1.2,,12,1.3,7.0,68,65,72,yes,yes,190,0,yes,no,yes,yes,ILLUSTRATIVE: not a real municipality
+Town C,NH,Resort town,9000,2025,420,105,5.5,1.0,14.0,22.0,3.0,,4,0.7,4.0,74,30,65,yes,no,240,0,no,yes,no,yes,ILLUSTRATIVE: not a real municipality
+Town D,VT,Small rural town,5200,2025,120,88,4.9,-2.5,9.0,8.5,0.4,,28,1.6,6.5,61,85,70,no,no,300,1,no,no,no,no,ILLUSTRATIVE: not a real municipality
+Town E,MA,Gateway city,62000,2025,95,72,6.8,1.5,16.0,7.0,-0.8,0.6,46,2.6,8.5,55,140,58,yes,yes,255,1,yes,yes,yes,no,ILLUSTRATIVE: not a real municipality
+Town F,RI,Mill town,18500,2025,105,78,6.2,-4.0,21.0,4.5,-2.5,0.3,42,2.2,10.5,49,165,52,no,no,330,2,no,no,no,no,ILLUSTRATIVE: not a real municipality
+Town G,NY,Growing exurb,16000,2025,175,110,3.9,9.5,7.0,11.0,0.9,2.5,18,2.8,11.0,66,70,55,yes,yes,200,0,no,yes,yes,no,ILLUSTRATIVE: not a real municipality
+Town H,MA,Regional center,34000,2025,140,95,4.6,2.0,11.0,9.5,0.2,1.8,25,1.9,8.0,63,95,66,yes,no,230,0,yes,yes,yes,yes,ILLUSTRATIVE: not a real municipality
+Town I,ME,College town,23000,2025,160,98,3.4,3.0,24.0,12.5,1.0,4.0,15,1.5,6.0,70,55,74,yes,yes,180,0,no,yes,yes,yes,ILLUSTRATIVE: not a real municipality
+Town J,NJ,Coastal city,47000,2025,190,90,5.1,0.5,13.0,6.0,-1.2,1.0,22,3.4,12.5,58,120,60,no,yes,270,1,no,no,no,no,ILLUSTRATIVE: not a real municipality
