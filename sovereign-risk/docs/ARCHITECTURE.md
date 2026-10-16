@@ -58,7 +58,9 @@ Most models run on their own and meet only in the dashboard. The links that exis
 - **Muni reuses one function.** `muni.py` uses `scoring._interp` (five thresholds to a 0-100 score) and nothing
   else from RPF-01.
 - **The dashboard reads everything.** `dashboard.py` calls every engine, including a fresh MAC SRDSF run on the
-  template sample, and embeds the results and the world map in one page.
+  template sample, and embeds the results and the world map in one page, split into seven tabs by type of work.
+- **Live pulls feed RPF-05.** `live.py` rates a country pulled live on the early-warning panel (`ews.ews_table`),
+  shown in the dashboard's Live country data tab when it is served by `serve.py`.
 
 Proposed links, not built:
 

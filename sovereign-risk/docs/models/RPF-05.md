@@ -33,7 +33,9 @@ both files by hand.
 
 ## Outputs
 
-A table per country and year of ratings, percentiles and the warning score; the dashboard's early-warning heatmap.
+A table per country and year of ratings, percentiles and the warning score; the dashboard's early-warning heatmap;
+and, through `python -m sovrisk.serve` or `python -m sovrisk.live`, a rating for one country pulled live (Live
+country data tab).
 
 ## Validation
 

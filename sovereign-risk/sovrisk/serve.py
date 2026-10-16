@@ -5,8 +5,7 @@
 
 Pick a country in the dashboard's Live country data tab and the server calls sovrisk.live.country_profile(), which
 asks the IMF, World Bank, BIS and Yahoo Finance for that country, then rates it on the early-warning panel. The
-server listens on 127.0.0.1 only, so nothing outside your machine can use it, and keys (such as COMTRADE_KEY) stay in
-its environment instead of the page. Routes:
+server listens on 127.0.0.1 only, so nothing outside your machine can use it. Routes:
 
     /                       the dashboard, built once at start (restart the server after changing data/)
     /api/countries          [{iso3, iso2, name}] from data/country_codes.csv, else the World Bank country list

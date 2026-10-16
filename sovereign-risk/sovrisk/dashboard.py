@@ -1,4 +1,6 @@
-"""Dashboard: one self-contained HTML page with a colour-coded risk map and a page per country.
+"""Dashboard: one self-contained HTML page in seven tabs (Sovereign credit, Live country data, Portfolio and insurance,
+Debt sustainability, Macro surveillance, PPP fiscal risk, Municipal credit), with a colour-coded risk map and a page
+per country. The Live country data tab works only when served by python -m sovrisk.serve.
 
     python -m sovrisk.dashboard --out outputs/dashboard.html
 

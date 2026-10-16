@@ -72,7 +72,9 @@ def build_panel(default_events, y0=1985, y1=2025):
 # ---- RPF-05 early-warning panel (sovrisk/ews.py) -------------------------------------------------------------------
 # NOT YET RUN: api.imf.org, api.worldbank.org and stats.bis.org are blocked in the build environment. The URL formats
 # follow each provider's documented API; check the first real response. Nothing here invents or fills data: a series
-# that cannot be fetched raises EWSFetchError, and a cell with no observation is left blank.
+# that cannot be fetched raises EWSFetchError, and a cell with no observation is left blank. The one exception is the
+# BIS credit gap in build_ews_panel: a country the BIS does not cover is named and skipped, and its gap stays blank
+# (ews.py computes it from credit_gdp).
 #   IMF WEO (SDMX)  BCA_NGDPD  current account, % of GDP              -> ca_gdp
 #                   PCPIPCH    inflation, average consumer prices, %  -> inflation
 #   World Bank WDI  FI.RES.TOTL.MO     total reserves in months of imports             -> reserves_months
@@ -140,9 +142,18 @@ def build_ews_panel(path=None, iso2_by_iso3=None, countries=None, y0=1980, y1=20
     for col, ind in EWS_WB.items():
         for iso, y, v in _ews_fetch(wb_series, f'World Bank {ind} ({WB.format(ind=ind, y0=y0, y1=y1)})', ind, y0, y1):
             raw.setdefault((iso, y), {})[col] = v
+    no_gap = []
     for iso3, iso2 in (iso2_by_iso3 or {}).items():
-        for _, y, v in bis_credit_gap(iso2, y0, y1):
+        try:
+            gaps = bis_credit_gap(iso2, y0, y1)
+        except EWSFetchError:    # the BIS publishes gaps for about 44 economies; ews.py computes the rest
+            no_gap.append(iso3)
+            continue
+        for _, y, v in gaps:
             raw.setdefault((iso3, y), {})['credit_gap'] = v
+    if no_gap:
+        print(f'BIS credit gap not available for {len(no_gap)} of {len(iso2_by_iso3)} countries '
+              f'({", ".join(no_gap[:12])}{", ..." if len(no_gap) > 12 else ""}): ews.py computes their gaps from credit_gdp')
     keep = set(countries) if countries else wb_economies()
     rows = []
     for (iso, y), d in sorted(raw.items()):

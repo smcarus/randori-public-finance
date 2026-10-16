@@ -11,7 +11,7 @@ means all of them. The IMF portal keys countries by ISO3, the same codes the mod
 
 NOT YET RUN against a live response: api.imf.org is blocked in the build environment. The WEO and IMTS keys below
 follow the IMF's published dimension order, but check them once with describe('WEO') and describe('IMTS')
-(python scripts/fetch_country_data.py imf-describe WEO) before relying on them. Install the client with
+(python scripts/fetch_country_data.py imf-describe --flow WEO) before relying on them. Install the client with
 pip install sdmx1, or pip install -e .[data].
 """
 

@@ -43,6 +43,8 @@ HS = {'oil': ['2709', '2710', '2711'],
       'food': [f'{i:02d}' for i in range(1, 25)]}
 WB = 'https://api.worldbank.org/v2/country/{iso3}/indicator/{ind}?format=json&per_page=20000&date={y0}:{y1}'
 WB_COUNTRIES = 'https://api.worldbank.org/v2/country/all?format=json&per_page=400'   # the country list
+# UN Comtrade's reporter list: M49 numbers with ISO codes. Public, no key. Response shape to verify on first run.
+COMTRADE_REPORTERS = 'https://comtradeapi.un.org/files/v1/app/reference/Reporters.json'
 WB_GDP_USD = 'NY.GDP.MKTP.CD'
 WB_USD_DEBT_SHARE = 'DT.CUR.USDL.ZS'   # currency composition of PPG debt, U.S. dollars (%), IDS
 WB_REMITTANCE_MATRIX = 'https://www.worldbank.org/en/topic/migration/brief/remittances-data'   # page with the download
@@ -104,6 +106,21 @@ def fetch_comtrade(reporter, year, commodity, key=None):
     cmd = ','.join(HS[commodity])
     url = (COMTRADE_KEYED if key else COMTRADE).format(reporter=reporter, year=year, cmd=cmd, key=key)
     return parse_comtrade(json.loads(_get(url, 'UN Comtrade')), commodity)
+
+
+def fetch_m49():
+    """{ISO3: M49 number as text} for every country in UN Comtrade's reporter list."""
+    return parse_m49(json.loads(_get(COMTRADE_REPORTERS, 'UN Comtrade reporter list')))
+
+
+def parse_m49(d):
+    """Comtrade reporter list JSON ({'results': [{'reporterCode', 'reporterCodeIsoAlpha3', ...}]}) -> {ISO3: M49}.
+    Groups and former countries without an ISO3 code are left out."""
+    rows = d.get('results') if isinstance(d, dict) else None
+    if not isinstance(rows, list):
+        raise DataUnavailable('UN Comtrade reporter list: no "results" list in the reply')
+    return {r['reporterCodeIsoAlpha3']: str(r['reporterCode']) for r in rows
+            if r.get('reporterCodeIsoAlpha3') and r.get('reporterCode') is not None and not r.get('isGroup')}
 
 
 def parse_comtrade(d, commodity):

@@ -166,5 +166,40 @@ def test_codes_command_fills_from_the_country_list_and_keeps_m49(monkeypatch, tm
     path = tmp_path / 'country_codes.csv'
     path.write_text('iso3,iso2,m49,name\nAAA,AA,999,Old name\nZZZ,ZZ,998,Hand-added\n')
     monkeypatch.setattr(fetch.sd, 'fetch_wb_countries', lambda: SD.parse_wb_countries(WB_COUNTRY_LIST))
+    def no_comtrade():
+        raise SD.DataUnavailable('host blocked')
+    monkeypatch.setattr(fetch.sd, 'fetch_m49', no_comtrade)
     fetch.main(['codes', '--codes', str(path)])
     assert path.read_text().splitlines() == ['iso3,iso2,m49,name', 'AAA,AA,999,Country A', 'ZZZ,ZZ,998,Hand-added']
+    monkeypatch.setattr(fetch.sd, 'fetch_m49', lambda: {'AAA': '111'})       # Comtrade's number wins when it has one
+    fetch.main(['codes', '--codes', str(path)])
+    assert path.read_text().splitlines()[1] == 'AAA,AA,111,Country A'
+
+
+def test_parse_m49_keeps_countries_with_iso3():
+    d = {'results': [{'reporterCode': 111, 'reporterCodeIsoAlpha3': 'AAA', 'isGroup': False},
+                     {'reporterCode': 222, 'reporterCodeIsoAlpha3': 'BBB'},
+                     {'reporterCode': 899, 'reporterCodeIsoAlpha3': None},
+                     {'reporterCode': 900, 'reporterCodeIsoAlpha3': 'GRP', 'isGroup': True}]}
+    assert SD.parse_m49(d) == {'AAA': '111', 'BBB': '222'}
+    with pytest.raises(SD.DataUnavailable):
+        SD.parse_m49({'error': 'x'})
+
+
+def test_countries_all_reads_every_code_and_uses_one_world_bank_request(monkeypatch, tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('fetch', Path(__file__).parents[1] / 'scripts' / 'fetch_country_data.py')
+    fetch = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fetch)
+    path = tmp_path / 'country_codes.csv'
+    many = [f'A{i:02d}' for i in range(25)]
+    path.write_text('iso3,iso2,m49,name\n' + ''.join(f'{c},,,{c}\n' for c in many))
+    assert fetch.iso_list('all', path) == many and fetch.iso_list('arg, zmb', path) == ['ARG', 'ZMB']
+    calls = []
+    monkeypatch.setattr(fetch.sd, 'fetch_wb', lambda c, ind, y0, y1: calls.append(c) or {(k, 2024): 1.0 for k in many + ['WLD']})
+    assert set(fetch.wb_many(many, 'X', 2024, 2024)) == {(k, 2024) for k in many}     # aggregates dropped
+    assert calls == ['all']
+    empty = tmp_path / 'empty.csv'
+    empty.write_text('iso3,iso2,m49,name\n')
+    with pytest.raises(SystemExit):
+        fetch.iso_list('all', empty)

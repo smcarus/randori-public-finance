@@ -1,4 +1,4 @@
-"""Live country pull (sovrisk.live) and the local server (sovrisk.serve). Every provider is replaced by a stand-in
+"""Live country pull (sovrisk.live), the local server (sovrisk.serve) and the early-warning panel builder. Every provider is replaced by a stand-in
 returning hand-made numbers for a hypothetical country AAA; no network. None of these numbers is real data."""
 import json
 import threading
@@ -92,3 +92,16 @@ def test_server_routes(server):
 def test_server_listens_on_localhost_only():
     import inspect
     assert "('127.0.0.1', a.port)" in inspect.getsource(serve.main)
+
+
+def test_ews_panel_skips_countries_the_bis_does_not_cover(monkeypatch, tmp_path):
+    monkeypatch.setattr(connectors, 'imf_series', lambda ind, countries=(): [(c, 2024, 1.0) for c in countries])
+    monkeypatch.setattr(connectors, 'wb_series', lambda ind, y0, y1: [('AAA', 2024, 50.0), ('BBB', 2024, 50.0)])
+
+    def gap(iso2, y0, y1):
+        if iso2 == 'BB':
+            raise connectors.EWSFetchError('404: no BIS series')
+        return [(iso2, 2024, 3.0)]
+    monkeypatch.setattr(connectors, 'bis_credit_gap', gap)
+    rows = connectors.build_ews_panel(tmp_path / 'p.csv', {'AAA': 'AA', 'BBB': 'BB'}, ['AAA', 'BBB'], 2024, 2024)
+    assert {r['country']: r.get('credit_gap') for r in rows} == {'AAA': 3.0, 'BBB': None}
