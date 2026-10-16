@@ -435,7 +435,6 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="card"><h2>Risk map</h2><div class="muted">Colour shows the country score (higher is riskier). Click a country to open its page.</div><div id="map"></div></div>
 <div class="grid" style="margin-top:16px">
 <div class="card"><h2>Countries ranked</h2><div id="rank" class="chart" style="height:420px"></div></div>
-<div class="card"><h2>Portfolio loss (Monte Carlo)</h2><div id="mcsum" class="muted"></div><div id="hist" class="chart"></div></div>
 </div>
 <div class="row"><h2 style="margin:0" id="cname"></h2><select id="pick"></select><span id="csrc"></span></div>
 <div class="kpis" id="kpis"></div>
@@ -450,10 +449,21 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="card"><h2>Pillar profile</h2><div id="radar" class="chart"></div></div>
 <div class="card"><h2>Most sensitive indicators</h2><div class="muted">Country-score points per 25-point move in the indicator score</div><div id="sens" class="chart"></div></div>
 <div class="card"><h2>Default probability</h2><div id="pd" class="chart"></div><div id="pdnote" class="muted"></div></div>
-<div class="card"><h2>Political risk insurance</h2><div id="pri"></div><div id="pric" class="chart"></div></div>
 <div class="card"><h2>Restructuring</h2><div id="bonds"></div></div>
 </div>
 <div class="card" style="margin-top:16px"><h2>Calibration (backtest)</h2><div id="calnote" class="muted"></div><div id="cal" class="chart"></div></div>
+</section>
+<section id="port">
+<div class="row"><h2 style="margin:0">Portfolio loss</h2></div>
+<div class="grid">
+<div class="card"><h2>Portfolio loss (Monte Carlo)</h2><div id="mcsum" class="muted"></div><div id="hist" class="chart"></div></div>
+<div class="card"><h2>Share of portfolio expected shortfall, by country</h2><div class="muted">How much of the tail loss each country accounts for</div><div id="esshare" class="chart" style="height:420px"></div></div>
+</div>
+<div class="row"><h2 style="margin:0">Political risk insurance</h2><select id="pripick" aria-label="Country"></select></div>
+<div class="grid">
+<div class="card"><h2 id="prih">Policies for this country</h2><div id="pri"></div><div id="pric" class="chart"></div></div>
+<div class="card"><h2>All policies in the book</h2><div class="muted">Click a row to open that country</div><div class="scroll" id="pribook" style="margin-top:8px"></div></div>
+</div>
 </section>
 <section id="muni">
 <div class="row"><h2 style="margin:0">Municipal credit scorecard</h2><span class="tag" id="mumodel"></span></div>
@@ -573,11 +583,22 @@ Plotly.newPlot('hist', [{type:'bar', x:P.histogram.map((_,i)=>(i+0.5)*w), y:P.hi
   hovertemplate:'Loss ≈ %{x:.1f}: %{y} trials<extra></extra>'}],
   L({xaxis:{title:{text:'Portfolio loss (US$m)'}, gridcolor:grid}, yaxis:{title:{text:'Trials'}, type:'log', gridcolor:grid}}), cfg);
 
-const sel = document.getElementById('pick');
-names.forEach(n => sel.add(new Option(n, n))); sel.onchange = () => show(sel.value);
+const sel = document.getElementById('pick'), psel = document.getElementById('pripick');
+names.forEach(n => { sel.add(new Option(n, n)); psel.add(new Option(n, n)); }); sel.onchange = () => show(sel.value); psel.onchange = () => show(psel.value);
+{ const es = names.filter(n => D.countries[n].es_share != null).sort((a,b)=>D.countries[a].es_share-D.countries[b].es_share);
+  Plotly.newPlot('esshare', [{type:'bar', orientation:'h', y:es, x:es.map(n=>100*D.countries[n].es_share), marker:{color:'#4c78a8'},
+    hovertemplate:'%{y}: %{x:.1f}% of ES<extra></extra>'}], L({margin:{l:10,r:10,t:10,b:40}, yaxis:{automargin:true}, xaxis:{title:{text:'% of portfolio ES'}, gridcolor:grid}}), cfg);
+  document.getElementById('esshare').on('plotly_click', e => show(e.points[0].y));
+  const book = names.flatMap(n => D.countries[n].policies.map(p => ({n, ...p})));
+  document.getElementById('pribook').innerHTML = book.length ? '<table><tr><th>Country</th><th>Policy</th><th>Sector</th><th>Term</th><th>Premium</th><th>Claim prob.</th></tr>'
+    + book.map(p=>`<tr data-c="${p.n}"><td class="c">${p.n}</td><td>${p.id}</td><td>${p.sector}</td><td>${p.term}y</td><td>${num(p.premium_bps)} bps</td><td>${pct(p.claim_prob_term)}</td></tr>`).join('') + '</table>'
+    : '<div class="muted">No policies in data/pri_policies.csv.</div>';
+  document.querySelectorAll('#pribook tr[data-c]').forEach(tr => tr.onclick = () => show(tr.dataset.c)); }
 
 function show(n){
-  const c = D.countries[n]; if(!c) return; sel.value = n; cur = n;
+  const c = D.countries[n]; if(!c) return; sel.value = psel.value = n; cur = n;
+  document.getElementById('prih').textContent = `Policies for ${n}`;
+  document.querySelectorAll('#pribook tr[data-c]').forEach(tr => tr.classList.toggle('pick', tr.dataset.c===n));
   document.getElementById('cname').textContent = n;
   document.getElementById('csrc').innerHTML = c.source==='Model' ? '' : '<span class="tag">Preliminary score only: no model inputs yet</span>';
   const k = [['Score', num(c.score)], ['Grade', c.grade], ['Best / worst', `${num(c.cases.best.score)} / ${num(c.cases.worst.score)}`],
@@ -682,6 +703,8 @@ const _show = show; show = n => { _show(n); if (D.countries[n]) renderLevers(); 
 if (names.length) show(names.includes('Belize') ? 'Belize' : names[0]);
 else {  // no country scored (the public repo ships data/countries.csv and data/inputs.csv header-only): list the levers anyway
   document.getElementById('pick').style.display = 'none';
+  document.getElementById('pripick').style.display = 'none'; document.getElementById('pric').style.display = 'none';
+  document.getElementById('pri').innerHTML = '<div class="muted">No country is loaded: add one to data/countries.csv and its policies to data/pri_policies.csv.</div>';
   document.getElementById('levres').innerHTML = '<div class="card empty" style="flex:1"><h3>No country is loaded, so the levers have nothing to act on.</h3>' +
     '<div class="muted">Add at least one country to <code>data/countries.csv</code> (and its indicator values to <code>data/inputs.csv</code>), ' +
     'then rebuild with <code>python -m sovrisk.dashboard</code>. Each lever then shows its effect on that country\'s score, default probability and losses.</div></div>';
@@ -1052,7 +1075,8 @@ showSpill(Object.keys(S.scenarios)[0]);
 // Group the page by type of work: one tab per group, each holding the sections below. A group whose sections all
 // hid themselves (no data) gets no tab. The open tab is kept in the address (#credit) so a link opens it.
 { const GROUPS = [
-    {id:'credit', label:'Sovereign credit', sub:'Scorecard, levers, PD, PRI, portfolio', secs:['sov']},
+    {id:'credit', label:'Sovereign credit', sub:'Scorecard, levers, default, restructuring', secs:['sov']},
+    {id:'portfolio', label:'Portfolio and insurance', sub:'Monte Carlo loss, political risk insurance', secs:['port']},
     {id:'dsa', label:'Debt sustainability', sub:'IMF MAC SRDSF', secs:['srdsf']},
     {id:'macro', label:'Macro surveillance', sub:'Early warning, spillovers', secs:['ews','spill']},
     {id:'ppp', label:'PPP fiscal risk', sub:'PFRAM 2.0', secs:['pfram']},
