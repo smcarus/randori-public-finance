@@ -24,6 +24,11 @@ and likewise `banks`, `commodities`, `rates` and `remittances`. The script calls
 nothing is written and the error names the URL. These have never run against a live response, so check the first
 output by eye. The remittance matrix and each country's gross financing need have no API: see the README.
 
+Market prices (US Treasury yields, oil, copper, exchange rates) come from Yahoo Finance through yfinance
+(`sovrisk/market.py`, `fetch_country_data.py market`) into `data/market_prices.csv`, columns `series, ticker, date,
+value, unit, source`. Yahoo's terms forbid redistribution, so the file is in `.gitignore` and stays in the private
+copy. Yahoo has no sovereign CDS: `data/market_spreads.csv` is still entered by hand.
+
 ## Route 2: enter it by hand (works today)
 
 Copy the columns below into a spreadsheet, fill the rows from the sources named, and save as CSV in `data/`.
@@ -80,4 +85,4 @@ and its early-warning and spillover sections fill in.
 
 - Thresholds in `rulebook/ews.yaml` and every elasticity in `rulebook/spillover.yaml` are drafts.
 - Spot-check a few values against the source pages.
-- Keep licensed data (Bloomberg, LSEG, paid Comtrade) out of the public repo. Store it only in the private copy.
+- Keep licensed data (Bloomberg, LSEG, paid Comtrade, Yahoo Finance prices) out of the public repo. Store it only in the private copy.

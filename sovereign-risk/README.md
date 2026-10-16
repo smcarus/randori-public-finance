@@ -55,6 +55,7 @@ hosts, so check the first output of each source by eye against the provider's we
 | World Bank | `api.worldbank.org` | No | The country list (`country/all`); reserves, REER, private credit, short-term debt (WDI, IDS); GDP in US$ for every % of GDP conversion; US dollar share of public debt | `ews_panel.csv`, all `spill_*.csv`, `spill_rates.csv` |
 | BIS | `stats.bis.org` | No | Credit-to-GDP gaps; foreign claims of banks by nationality (consolidated banking statistics) | `ews_panel.csv`, `spill_banks.csv` |
 | UN Comtrade | `comtradeapi.un.org` | Optional | Exports and imports of oil, metals, copper and food | `spill_commodities.csv` |
+| Yahoo Finance (yfinance) | `query1.finance.yahoo.com`, `query2.finance.yahoo.com`, `fc.yahoo.com`, `guce.yahoo.com` | No | US Treasury yields (3-month, 5-year, 10-year), Brent, WTI and copper futures, exchange rates against the US dollar. No sovereign CDS: `data/market_spreads.csv` stays hand-entered | `market_prices.csv` (private: Yahoo's terms forbid redistribution, so the file is in `.gitignore`) |
 
 **1. Make the hosts reachable and install the IMF client.** On your own machine the hosts usually are reachable. In
 a cloud environment, add the hosts above to its allowed network list. Then run `pip install -e .[data]`, which
@@ -120,6 +121,10 @@ python scripts/fetch_country_data.py remittances --countries ARG,ZMB,SLV --matri
 - `remittances` reads the World Bank bilateral remittance matrix, which has no API. Download it from the World
   Bank's migration and remittances data page, save the sheet for one year as CSV, and pass its path.
 - A failed download stops with an error naming the URL and writes nothing. Nothing is filled with made-up values.
+- `market` writes `data/market_prices.csv` (monthly closes by default) from Yahoo Finance through yfinance:
+  `python scripts/fetch_country_data.py market --years 2015-2026 --fx ARS,ZMW` (`--interval 1d` for daily). The
+  file is in `.gitignore` and must never go to the public repo. Sovereign CDS is not on Yahoo, so keep entering
+  5-year CDS in `data/market_spreads.csv` by hand.
 
 **5. Optional: crisis dates.** For the early-warning panel's fitted weights, add `data/crisis_dates.csv` (country,
 year, type) from the Laeven and Valencia systemic crises database. It has no API.

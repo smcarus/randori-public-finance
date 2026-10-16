@@ -19,7 +19,7 @@ pull request anyone can read.
 | --- | --- | --- |
 | Rulebook | `rulebook/*.yaml` | `rulebook.yaml` (RPF-01 pillars, indicators, weights, thresholds) and `settings.yaml` (RPF-01 blend, caps, stress shocks, backtest, Monte Carlo, PRI and restructuring settings), both generated from the workbook; `levers.yaml`, `muni.yaml`, `ews.yaml` and `spillover.yaml`, written by hand with comments. See [RULEBOOK.md](RULEBOOK.md) |
 | Data | `data/` | Input CSVs and YAML. Analyst inputs are header-only templates in the public repo; illustrative rows are labelled. RPF-05 and RPF-06 data files are not in the repo until real data is loaded (see [DATA.md](DATA.md)) |
-| Connectors | `imf.py`, `connectors.py`, `spillover_data.py` | Fetch and parse functions for the IMF (its SDMX API, through the sdmx1 client `sdmx.Client('IMF_DATA')`), World Bank, BIS and UN Comtrade. Not yet run against live responses: those hosts are blocked in the build environment |
+| Connectors | `imf.py`, `connectors.py`, `spillover_data.py`, `market.py` | Fetch and parse functions for the IMF (its SDMX API, through the sdmx1 client `sdmx.Client('IMF_DATA')`), World Bank, BIS, UN Comtrade and Yahoo Finance (yfinance; market prices, kept private). Not yet run against live responses: those hosts are blocked in the build environment |
 | Engines | one module or package per model | The calculations (below). `config.py` loads the rulebook and data files and defines `ROOT`, the repo folder every engine reads from |
 | Outputs | `cli.py`, `dashboard.py`, each engine's `main()` | Result tables in `outputs/`, one self-contained HTML dashboard, and a console report per engine |
 

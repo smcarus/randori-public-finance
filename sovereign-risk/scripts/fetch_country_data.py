@@ -9,12 +9,14 @@ panel) and RPF-06 (spillover network) read. NOT YET RUN against live responses: 
     python scripts/fetch_country_data.py remittances --countries ARG,ZMB,SLV --matrix path/to/matrix.csv --years 2021
     python scripts/fetch_country_data.py imf-describe --flow WEO     # check an IMF dataflow's dimensions and codes
     python scripts/fetch_country_data.py codes                       # fill data/country_codes.csv from the World Bank
+    python scripts/fetch_country_data.py market --years 2015-2026 --fx ARS,ZMW   # Yahoo Finance prices (private file)
 
 IMF data (ews, trade) comes through the IMF's SDMX API with the sdmx1 client, sdmx.Client('IMF_DATA') (see
 sovrisk/imf.py; pip install sdmx1). banks, commodities and remittances need data/country_codes.csv (iso3, iso2, m49,
 name), because the BIS keys countries by ISO2, Comtrade by M49 number and the remittance matrix by name; ews uses
 its iso2 column for the BIS credit gap if it is filled. The codes command fills iso3, iso2 and name for every
-economy from the World Bank country list (api.worldbank.org/v2/country/all); m49 stays as you entered it. Fill it for each country you
+economy from the World Bank country list (api.worldbank.org/v2/country/all); m49 stays as you entered it. The
+market command writes data/market_prices.csv from Yahoo Finance (yfinance), which is kept out of the public repo. Fill it for each country you
 use, partners included. A UN Comtrade subscription key, if you have one, is read from the COMTRADE_KEY environment
 variable. Nothing is filled with made-up values: a failed download stops with an error and writes nothing.
 """
@@ -137,6 +139,16 @@ def country_codes(a):
           '(add M49 numbers by hand for the commodities command)')
 
 
+def market_prices(a):
+    from sovrisk import market
+    if not a.years:
+        sys.exit('--years is required, e.g. --years 2015-2026')
+    y0, y1 = years(a.years)
+    series = {**market.SERIES, **market.fx_series([c.strip().upper() for c in a.fx.split(',') if c.strip()])}
+    rows = market.fetch(series, f'{y0}-01-01', f'{y1}-12-31', a.interval)
+    print(f'wrote {len(rows)} rows to {market.write(rows)} (private: not for the public repo)')
+
+
 def ews(a, codes):
     iso2 = by(codes, 'iso2') if codes else {}
     y0, y1 = years(a.years) if a.years else (1980, 2026)
@@ -148,13 +160,15 @@ def ews(a, codes):
 def main(argv=None):
     ap = argparse.ArgumentParser(description='Pull country data into data/ for RPF-05 and RPF-06.')
     ap.add_argument('what', choices=['ews', 'trade', 'banks', 'commodities', 'rates', 'remittances', 'imf-describe',
-                                       'codes'])
+                                       'codes', 'market'])
     ap.add_argument('--countries', default='', help='ISO3 codes, comma-separated')
     ap.add_argument('--partners', default='', help='ISO3 codes of partner economies (trade, banks)')
     ap.add_argument('--years', default='', help='a year or a range, e.g. 2015-2024')
     ap.add_argument('--matrix', help='remittance matrix saved as CSV (remittances)')
     ap.add_argument('--codes', default=str(ROOT / 'data' / 'country_codes.csv'))
     ap.add_argument('--flow', default='WEO', help='IMF dataflow id (imf-describe)')
+    ap.add_argument('--fx', default='', help='currency codes for exchange rates per US$, e.g. ARS,ZMW (market)')
+    ap.add_argument('--interval', default='1mo', help='price interval: 1d, 1wk or 1mo (market)')
     a = ap.parse_args(argv)
     if a.what == 'imf-describe':
         from sovrisk import imf
@@ -163,6 +177,8 @@ def main(argv=None):
         return
     if a.what == 'codes':
         return country_codes(a)
+    if a.what == 'market':
+        return market_prices(a)
     if not a.countries:
         ap.error('--countries is required')
     a.countries = [c.strip().upper() for c in a.countries.split(',') if c.strip()]

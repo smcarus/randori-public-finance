@@ -59,6 +59,7 @@ needed them, and say why in the commit message.
 | `test_ews.py` | RPF-05 ratings, own-history percentiles, signals-method weights, one-sided HP filter, missing data |
 | `test_spillover.py` | RPF-06 first and second rounds, channel split, damping, refusal of a matrix that does not shrink |
 | `test_imf.py` | IMF data through the sdmx1 client: the WEO and IMTS keys sent, unit scaling, blank values dropped, a blocked host stopping with an error. Uses a hand-made SDMX-ML sample (`tests/fixtures/`), no network |
+| `test_market.py` | Market prices through yfinance: closing prices to rows, blanks dropped, units, a failing or empty ticker stopping with an error, the output file kept in `.gitignore`. Uses a stand-in for yfinance, no network |
 
 All inputs in these tests are hand-made (hypothetical towns, countries A, B and C). None is real data.
 
