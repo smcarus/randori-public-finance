@@ -5,33 +5,35 @@
 # `benchmark` note gives the MA name for the same measure.
 # Scores run 0 (lowest risk) to 100 (highest risk), the same direction as the sovereign scorecard. Not a credit rating.
 # Thresholds are five points from the 0-score end to the 100-score end, scored in straight lines between them.
-version: '0.2'
+version: '0.3'
 benchmark_state: Massachusetts
 factors:
-  economy: {label: Economy and tax base, weight: 0.30}
+  economy: {label: Economy and tax base, weight: 0.25}
   finances: {label: Financial performance, weight: 0.30}
   debt: {label: Debt and liabilities, weight: 0.30}
-  governance: {label: Management and governance, weight: 0.10}
+  governance: {label: Management and governance, weight: 0.15}
 indicators:
   - {id: eqv_per_capita, factor: economy, weight: 0.25, unit: 'US$ thousand', label: Full market value per capita,
      benchmark: MA DLS equalized valuation (EQV),
      thresholds: [300, 200, 150, 110, 80]}
-  - {id: income_ratio, factor: economy, weight: 0.25, unit: '% of state median', label: Median household income vs state,
+  - {id: income_ratio, factor: economy, weight: 0.25, unit: '% of US median', label: Median household income vs US median,
      thresholds: [150, 120, 100, 85, 70]}
   - {id: unemployment, factor: economy, weight: 0.15, unit: '%', label: Unemployment rate, thresholds: [3, 4, 5, 6.5, 8]}
   - {id: pop_change_10y, factor: economy, weight: 0.15, unit: '%', label: Population change over 10 years,
      thresholds: [8, 4, 0, -3, -6]}
   - {id: top10_taxpayers, factor: economy, weight: 0.20, unit: '% of levy', label: Top 10 taxpayers' share of levy,
      thresholds: [5, 8, 12, 18, 25]}
-  - {id: reserves_pct, factor: finances, weight: 0.35, unit: '% of revenue', label: Unrestricted reserves incl. rainy-day funds,
+  - {id: reserves_pct, factor: finances, weight: 0.30, unit: '% of revenue', label: Unrestricted reserves incl. rainy-day funds,
      benchmark: MA certified free cash plus stabilization funds,
      thresholds: [20, 15, 10, 6, 3]}
-  - {id: operating_margin, factor: finances, weight: 0.30, unit: '% of revenue', label: General fund operating margin (3-year average),
+  - {id: operating_margin, factor: finances, weight: 0.25, unit: '% of revenue', label: General fund operating margin (3-year average),
      thresholds: [3, 1.5, 0, -2, -4]}
+  - {id: cash_pct_exp, factor: finances, weight: 0.15, unit: '% of expenditure', label: Unrestricted cash and investments,
+     thresholds: [30, 20, 12, 7, 3]}
   - {id: excess_levy_capacity, factor: finances, weight: 0.15, unit: '% of levy limit', label: Unused capacity under state tax limit,
      benchmark: MA excess levy capacity under Proposition 2½; left blank where the state sets no limit (drops out),
      thresholds: [8, 4, 2, 1, 0.25]}
-  - {id: state_aid_share, factor: finances, weight: 0.20, unit: '% of revenue', label: State and federal aid share of revenue,
+  - {id: state_aid_share, factor: finances, weight: 0.15, unit: '% of revenue', label: State and federal aid share of revenue,
      thresholds: [10, 20, 30, 40, 50]}
   - {id: net_debt_pct_eqv, factor: debt, weight: 0.25, unit: '% of equalized valuation', label: Net direct debt (% of full market value),
      thresholds: [0.5, 1, 2, 3, 5]}

@@ -10,7 +10,7 @@ Massachusetts practice is the gold standard for administration: the governance f
 MA requires or recommends (free cash certification, five-year revaluation review, PERAC full-funding schedules, OPEB
 trusts, written reserve policies), whatever its own state requires. A state with no property tax limit leaves the
 levy-capacity indicator blank, and it drops out. Randori's own model, drawing on the factor families
-in public rating methods. NOT A CREDIT RATING. Version 0.2 runs on ILLUSTRATIVE towns only and is untested.
+in public rating methods. NOT A CREDIT RATING. Version 0.3 runs on ILLUSTRATIVE towns only and is untested.
 """
 import argparse
 import csv
@@ -21,7 +21,7 @@ import yaml
 from .config import ROOT, read_csv
 from .scoring import _interp
 
-MODEL = 'RPF-03 v0.2'
+MODEL = 'RPF-03 v0.3'
 
 
 def load(root=ROOT):

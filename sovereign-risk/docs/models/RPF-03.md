@@ -1,4 +1,4 @@
-# RPF-03 v0.2: Municipal credit scorecard
+# RPF-03 v0.3: Municipal credit scorecard
 
 **Status:** untested; runs on illustrative towns only. Randori's own model, not a credit rating.
 **Code:** `sovrisk/muni.py`; rulebook `rulebook/muni.yaml`.
@@ -11,8 +11,11 @@ the sovereign scorecard, with the factors behind it.
 
 ## Method
 
-- **Factors.** Draft weights: economy and tax base 30%, financial performance 30%, debt and liabilities 30%,
-  management and governance 10%. Each indicator is scored 0-100 by straight lines between five thresholds. A
+- **Factors.** Draft weights: economy and tax base 25%, financial performance 30%, debt and liabilities 30%,
+  management and governance 15%. The economy, finances and debt families follow Moody's US cities and counties
+  scorecard; governance carries 5 points more than Moody's 10% because Massachusetts administration is the benchmark.
+  Income is measured against the US median so towns in different states compare fairly, and finances include
+  unrestricted cash and investments as a liquidity measure. Each indicator is scored 0-100 by straight lines between five thresholds. A
   missing indicator drops out and its factor's weights are rescaled.
 - **Massachusetts benchmark.** Massachusetts is the gold standard for administration. The governance factor scores
   every town against what Massachusetts requires or recommends, whatever its own state requires: free cash
@@ -44,7 +47,10 @@ outside Massachusetts). Not checked against any rating or real outcome.
 
 ## Limits
 
-Weights and thresholds are drafts awaiting approval. Regional school districts are not covered yet.
+Weights and thresholds were approved as drafts on 16 Oct 2026 and are set by judgement, not fitted. They are still to be
+checked against the ratings of 30 to 50 Massachusetts towns. Regional school districts are not covered: they need a
+variant without levy indicators. Full market value thresholds are in absolute dollars, so towns outside high-value
+states tend to score weaker on that indicator; to revisit after the ratings check.
 
 ## Use
 
@@ -53,6 +59,10 @@ towns, and no output goes to municipal officials.
 
 ## Change log
 
+- v0.3 (16 Oct 2026): economy 30% to 25% and governance 10% to 15%; income against the US median instead of the
+  state median; new liquidity indicator (unrestricted cash and investments, % of expenditure; finances now reserves
+  30%, margin 25%, liquidity 15%, levy capacity 15%, aid 15%). Illustrative towns gained a cash column. Weights are
+  still drafts until checked against rated Massachusetts towns.
 - v0.2: any US state; governance scored against eight Massachusetts practices; levy capacity drops out where there
   is no levy limit.
 - v0.1: Massachusetts towns only.

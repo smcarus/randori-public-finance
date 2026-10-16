@@ -60,8 +60,8 @@ def test_percentiles_run_0_to_100():
 
 def test_golden_illustrative_scores():
     r = M.run_all()['towns']
-    assert r['Town A']['base']['score'] == pytest.approx(9.3, abs=0.05)
-    assert r['Town F']['base']['score'] == pytest.approx(81.2, abs=0.05)
+    assert r['Town A']['base']['score'] == pytest.approx(9.4, abs=0.05)
+    assert r['Town F']['base']['score'] == pytest.approx(82.0, abs=0.05)
     assert [n for n, _ in sorted(r.items(), key=lambda kv: kv[1]['base']['score'])][:3] == ['Town A', 'Town C', 'Town B']
 
 

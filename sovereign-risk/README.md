@@ -16,7 +16,7 @@ The others are Randori's own models, written in Python. Cite the model ID and ve
 | --- | --- | --- | --- | --- |
 | RPF-01 v0.5 (formerly M-13) | Sovereign risk scorecard, with scenarios, backtests, Monte Carlo, default PD, PRI, restructuring and levers | `sovrisk/` (`scoring.py` and others) | Port of the Randori workbook; analyst inputs private | [RPF-01](docs/models/RPF-01.md) |
 | RPF-02 v0.1 | PPP fiscal risk (PFRAM 2.0 port) | `sovrisk/pfram.py` | Matches the workbook on illustrative projects; untested on a real one | [RPF-02](docs/models/RPF-02.md) |
-| RPF-03 v0.2 | Municipal credit scorecard, any US state, Massachusetts practice as benchmark | `sovrisk/muni.py` | Illustrative towns only | [RPF-03](docs/models/RPF-03.md) |
+| RPF-03 v0.3 | Municipal credit scorecard, any US state, Massachusetts practice as benchmark | `sovrisk/muni.py` | Illustrative towns only | [RPF-03](docs/models/RPF-03.md) |
 | RPF-04 v0.1 | Debt sustainability: MAC SRDSF and LIC DSF ports | `sovrisk/srdsf/`, `sovrisk/licdsf/` | Matches both templates cell for cell; untested on a new country | [RPF-04](docs/models/RPF-04.md) |
 | RPF-05 v0.1 | Macro early-warning panel | `sovrisk/ews.py` | Built; no country data yet | [RPF-05](docs/models/RPF-05.md) |
 | RPF-06 v0.1 | Spillover network | `sovrisk/spillover.py` | Built; no country data yet; elasticities are drafts | [RPF-06](docs/models/RPF-06.md) |
