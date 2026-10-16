@@ -117,6 +117,7 @@ def dashboard_data(cfg, root=ROOT):
                      'synthetic': bool(cfg.settings['backtest'].get('include_synthetic'))},
         'pfram': pfram_data(root),
         'muni': muni_data(root),
+        'srdsf': srdsf_data(root),
     })
 
 
@@ -160,6 +161,132 @@ def pfram_data(root=ROOT):
                        for k, v in r['shocks'].items()},
             'portfolio': cut(r['portfolio']), 'portfolio_shocked': {k: cut(v) for k, v in r['portfolio_shocked'].items()},
             'projects': projects}
+
+
+# MAC SRDSF (M-16): where each number lives in the template. Rows are 1-based Excel rows, columns letters.
+SRDSF_SIGNALS = [   # (label, Output row, column of the mechanical signal or None, column of the final assessment or None)
+    ('Overall', 19, None, 'O'), ('Near term', 23, 'N', 'O'), ('Medium term', 27, 'N', 'O'),
+    ('Medium term: fanchart', 28, 'N', None), ('Medium term: GFN', 29, 'N', None),
+    ('Medium term: stress test', 30, 'N', None), ('Long term', 32, None, 'O'),
+    ('Sustainability assessment', 36, 'N', 'O')]
+SRDSF_DRIVERS = [(218, 'Institutional quality'), (219, 'Stress history'), (220, 'Cyclical position'),
+                 (221, 'Debt burden & buffers'), (222, 'Global conditions')]
+SRDSF_STRESS = [('Banking crisis', 541, 558), ('Commodity prices', 542, 559), ('Contingent liabilities', 543, 560),
+                ('Exchange rate', 544, 561), ('Natural disasters', 545, 562)]   # Charts rows: debt/GDP, GFN/GDP
+SRDSF_MT = [('Fanchart width (% of GDP)', 298), ('Probability of debt non-stabilization (%)', 301),
+            ('Terminal debt-to-GDP x institutions index', 304), ('Average baseline GFN (% of GDP)', 314),
+            ("Initial banks' claims on the general government (% of bank assets)", 317),
+            ("Change in banks' claims in stress (% of bank assets)", 320)]
+SRDSF_CACHE_VERSION = b'srdsf-dashboard v1'   # bump when _srdsf_compute changes what it extracts
+SRDSF_SOURCES = [
+    ('Risk signals', 'Output!L19:O39 (SignalsTable on Signals!A3:M23)'),
+    ('Fan chart', 'Charts!C521:M527 (FAN!FanDataOut percentiles; baseline from BaseDB)'),
+    ('Near-term logit', 'Output!CG213:CJ222 (LOGIT!DataNT)'),
+    ('GFN path', 'Charts!C554:M557'), ('Medium-term index', 'Output!EO298:EQ339, Charts!C3600:F3603'),
+    ('Stress tests', 'Charts!C534:O545 and C555:O562 (paths shown only for activated tests)')]
+
+
+def _xl(v):
+    """A template cell as JSON: numbers stay numbers, Excel errors become None, text stays text."""
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)):
+        return None if math.isnan(v) or math.isinf(v) else float(v)
+    if isinstance(v, str) and v.startswith('#'):
+        return None
+    return v
+
+
+def _srdsf_inputs(root):
+    root = Path(root)
+    golden = root / 'tests' / 'golden' / 'srdsf'
+    files = sorted(golden.glob('*.json.gz')) + [golden / 'names.json', root / 'tests' / 'golden' / 'srdsf_alt' / 'changes.json']
+    files += sorted((Path(__file__).parent / 'srdsf').glob('*.py'))
+    return golden, files
+
+
+def _srdsf_compute(root):
+    """Run the port on the template sample with only the country selector changed (see srdsf_data)."""
+    from .srdsf import run as R
+    from .srdsf.book import ci
+    golden, _ = _srdsf_inputs(root)
+    alt = json.loads((Path(root) / 'tests' / 'golden' / 'srdsf_alt' / 'changes.json').read_text())
+    country = [x for x in alt if x[0] == 'Questions' and x[1] == 'C4']   # the country selector only, no macro edits
+    book = R.load(golden)
+    R.blank(book)
+    for sheet, cell, v in country:
+        book[sheet][cell] = v
+    res = R.run(book, fan=True, gfn=True)
+    O, C = book['Output'], book['Charts']
+    g = lambda S, r, col: _xl(S.get(r, ci(col)))
+    rng = lambda S, r, c0, c1: [_xl(S.get(r, c)) for c in range(ci(c0), ci(c1) + 1)]
+    years = [int(y) for y in rng(C, 521, 'C', 'M')]
+    signals = [{'label': lab, 'mechanical': g(O, r, m) if m else None, 'final': g(O, r, f) if f else None,
+                'row': r} for lab, r, m, f in SRDSF_SIGNALS]
+    lsp = rng(O, 215, 'CG', 'CJ')
+    gfn_out = res.get('gfn')
+    return {
+        'model': 'M-16 v0.1',
+        'run': {'passes': res['passes'], 'settled': res['settled'], 'fan_seed': res.get('fan', {}).get('seed'),
+                'fan_paths': res.get('fan', {}).get('ntraj'),
+                'gfn_converged': bool(gfn_out[0]) if isinstance(gfn_out, tuple) else False,
+                'gfn_note': gfn_out if isinstance(gfn_out, str) else None},
+        'signals': signals, 'stabilizes': g(O, 39, 'P'),
+        'fan': {'years': years, 'actual': rng(C, 534, 'C', 'M'), 'baseline': rng(C, 535, 'C', 'M'),
+                'p': {k: rng(C, r, 'C', 'M') for k, r in (('5', 523), ('25', 524), ('50', 525), ('75', 526), ('95', 527))}},
+        'logit': {'years': [int(y) for y in rng(O, 213, 'CG', 'CJ')], 'windows': rng(O, 214, 'CG', 'CJ'),
+                  'lsp': lsp, 'change': rng(O, 216, 'CG', 'CJ'),
+                  'drivers': [{'name': n, 'values': rng(O, r, 'CG', 'CJ')} for r, n in SRDSF_DRIVERS]},
+        'gfn': {'years': [int(y) for y in rng(C, 554, 'C', 'M')], 'actual': rng(C, 555, 'C', 'M'),
+                'baseline': rng(C, 556, 'C', 'M'), 'stress': rng(C, 557, 'C', 'M')},
+        'mt': {'components': [{'label': lab, 'value': g(O, r, 'EO'), 'contribution': g(O, r, 'EP')} for lab, r in SRDSF_MT],
+               'dfi': g(O, 332, 'EP'), 'dfi_norm': g(O, 332, 'EQ'), 'gfi': g(O, 333, 'EP'), 'gfi_norm': g(O, 333, 'EQ'),
+               'weights': [g(O, 332, 'ET'), g(O, 333, 'ET')], 'index': g(O, 334, 'EQ'), 'signal': g(O, 335, 'EQ'),
+               'final': g(O, 336, 'EQ'), 'years': [int(y) for y in rng(C, 3600, 'C', 'F')], 'history': rng(C, 3601, 'C', 'F'),
+               'low': g(C, 3602, 'F'), 'high': g(C, 3603, 'F'), 'notes': [g(O, 338, 'EL'), g(O, 339, 'EL')]},
+        'stress': {'years': years, 'debt_baseline': rng(C, 535, 'C', 'M'), 'debt_actual': rng(C, 534, 'C', 'M'),
+                   'gfn_baseline': rng(C, 556, 'C', 'M'), 'gfn_actual': rng(C, 555, 'C', 'M'),
+                   'tests': [{'name': n, 'active': bool(C.get(rd, ci('O'))), 'debt': rng(C, rd, 'C', 'M'),
+                              'gfn': rng(C, rg, 'C', 'M')} for n, rd, rg in SRDSF_STRESS]},
+        'sources': SRDSF_SOURCES,
+    }
+
+
+def srdsf_data(root=ROOT, cache=None):
+    """MAC SRDSF (sovrisk.srdsf, M-16): risk signals, fan chart, near-term logit, GFN and medium-term index, stress
+    tests, computed from the IMF template's fictional sample (tests/golden/srdsf).
+
+    With no country selected most peer-group lookups of the template return #N/A, so only the country selector
+    (Questions!C4, as in tests/golden/srdsf_alt/changes.json) is set to a listed country; all data stay the template's
+    fictional sample and the country name is never put in the result. The run takes about a minute, so the result is
+    cached in outputs/srdsf_dashboard.json under a hash of the inputs and of the port's source; the cache can be
+    deleted at any time and is rebuilt on the next call."""
+    import hashlib
+    import os
+    golden, files = _srdsf_inputs(root)
+    if not (golden / 'Output.json.gz').exists():
+        return None
+    h = hashlib.sha256(SRDSF_CACHE_VERSION)
+    for f in files:
+        if f.exists():
+            h.update(f.name.encode() + b'\0' + f.read_bytes())
+    key = h.hexdigest()
+    cache = Path(cache) if cache else Path(root) / 'outputs' / 'srdsf_dashboard.json'
+    try:
+        c = json.loads(cache.read_text(encoding='utf-8'))
+        if c.get('key') == key:
+            return c['data']
+    except (OSError, ValueError, KeyError, AttributeError):
+        pass
+    data = _clean(_srdsf_compute(root))
+    try:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache.with_suffix(f'.{os.getpid()}.tmp')
+        tmp.write_text(json.dumps({'key': key, 'data': data}), encoding='utf-8')
+        os.replace(tmp, cache)
+    except OSError:
+        pass
+    return data
 
 
 def render(data, title='Sovereign Risk Dashboard'):
@@ -271,6 +398,22 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="card"><h2>Workbook quirks kept for parity</h2><ul id="pfquirks" class="muted" style="padding-left:18px;margin:0"></ul></div>
 </div>
 <div class="card" style="margin-top:16px"><details><summary>Annual table for this project and case</summary><div class="scroll" id="pftable"></div></details></div>
+</section>
+<section id="srdsf">
+<div class="row"><h2 style="margin:0">Debt sustainability (MAC SRDSF)</h2><span class="tag">Sample country (fictional data from the IMF template)</span></div>
+<div class="muted" id="srsub">M-16 v0.1 · independent port of the IMF MAC SRDSF template · not endorsed by the IMF · sample country with fictional data · untested for real use</div>
+<div class="grid" style="margin-top:12px">
+<div class="card"><h2>Risk of sovereign stress: signals</h2><div class="muted">Mechanical signal from the template's tools and the final assessment (staff judgment in the template)</div><div id="srsig" class="scroll" style="margin-top:8px"></div></div>
+<div class="card"><h2>Debt fan chart</h2><div class="muted">Gross public debt, % of GDP: percentile bands of the simulated paths and the baseline</div><div id="srfan" class="chart"></div></div>
+<div class="card"><h2>Near-term logit stress probability</h2><div class="muted" id="srlogitn"></div><div id="srlogit" class="chart"></div></div>
+<div class="card"><h2>Gross financing needs</h2><div class="muted">% of GDP: baseline and the GFN module's stress scenario</div><div id="srgfn" class="chart"></div></div>
+<div class="card"><h2>Medium-term index against its thresholds</h2><div class="muted" id="srmtn"></div><div id="srmti" class="chart" style="height:200px"></div><div id="srmtt" class="scroll"></div></div>
+<div class="card"><h2>Stress tests: debt</h2><div class="muted">Gross public debt, % of GDP, baseline and each activated stress test</div><div id="srstd" class="chart"></div></div>
+<div class="card"><h2>Stress tests: gross financing needs</h2><div class="muted">GFN, % of GDP, baseline and each activated stress test</div><div id="srstg" class="chart"></div></div>
+<div class="card"><h2>Stress-test status</h2><div id="srstn"></div></div>
+</div>
+<div class="card" style="margin-top:16px"><details><summary>Data tables for these charts</summary><div class="scroll" id="srtable"></div></details></div>
+<div class="muted" id="srfoot" style="margin-top:10px;font-size:12px"></div>
 </section>
 </main>
 <script>window.PlotlyGeoAssets = {topojson: {world_110m: __WORLD__}};</script>
@@ -551,6 +694,114 @@ function showPF(){
 }
 pp.onchange = pc.onchange = showPF; showPF();
 }
+
+// ---------------------------------------------------------------- MAC SRDSF (M-16)
+{ const R = D.srdsf;
+if (!R) { document.getElementById('srdsf').style.display = 'none'; } else {
+// categorical slots 1-5 of the validated palette (validate_palette.js: light on #fff, dark on #1b2129, adjacent pairs)
+const SER = dark ? ['#3987e5','#d95926','#199e70','#c98500','#d55181'] : ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4'];
+const muted = dark ? '#9aa4b2' : '#5b6575', surf = dark ? '#1b2129' : '#fff';
+const ST = {Low:{c:'#0ca30c', i:'▽'}, Moderate:{c:'#fab219', i:'◇'}, High:{c:'#ec835a', i:'△'}, Yes:{c:'#0ca30c', i:'✓'}, No:{c:'#ec835a', i:'✗'}};
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const chip = (v, empty) => { if (v==null || v==='' || v==='…') return `<span class="muted">${empty||'—'}</span>`;
+  const s = ST[v]; if (!s) return `<span class="muted">${esc(v)}</span>`;
+  return `<span style="display:inline-block;white-space:nowrap;padding:1px 8px;border-radius:4px;border:1px solid ${s.c};background:${s.c}2e;font-weight:600">${s.i} ${v}</span>`; };
+const rgba = (h, a) => `rgba(${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)},${a})`;
+const lastIdx = a => { let k = -1; a.forEach((v,i)=>{ if (v!=null) k = i; }); return k; };
+const endText = (ys, label) => { const k = lastIdx(ys); return ys.map((_,i)=> i===k ? label : ''); };
+const sline = (x, y, name, color, extra={}) => Object.assign({type:'scatter', mode:'lines+text', x, y, name, connectgaps:false,
+  line:{color, width:2}, text:endText(y, name==='Actual' ? '' : name), textposition:'middle right', textfont:{color:ink, size:11}, cliponaxis:false,
+  hovertemplate:`${name}: %{y:.1f}%<extra></extra>`}, extra);
+const LL = (o={}) => L(Object.assign({hovermode:'x unified', margin:{l:40,r:95,t:10,b:30}, legend:{orientation:'h', y:-0.15},
+  xaxis:{gridcolor:grid, dtick:2, tickangle:0}, yaxis:{gridcolor:grid, ticksuffix:'%'}}, o));
+// the series that end before the projection (Actual) carry no direct label: their end sits on the baseline's start
+
+// risk-signal table
+const nm = {'Near term':'n.a. (see note 1)', 'Medium term: stress test':'no test activated'};
+document.getElementById('srsig').innerHTML = '<table><tr><th>Horizon</th><th>Mechanical signal</th><th>Final assessment</th></tr>'
+  + R.signals.map(s=>{ const sub = s.label.startsWith('Medium term:');
+      return `<tr><td style="${sub?'padding-left:20px':''}">${esc(sub ? s.label.replace('Medium term: ','') : s.label)}</td><td>${chip(s.mechanical, nm[s.label])}</td><td>${chip(s.final, sub ? 'part of medium term' : (s.final==='n.a.' ? 'n.a.' : '—'))}</td></tr>`; }).join('')
+  + `<tr><td>Debt stabilizes in the baseline</td><td>${chip(R.stabilizes)}</td><td></td></tr></table>`
+  + '<div class="muted" style="font-size:12px;margin-top:6px">— : the template produces no value for this cell. 1/ In the template sample the near-term signal is not available ("n.a."); it is also not applicable when there is a disbursing IMF arrangement.</div>';
+
+// fan chart: bands start at the last actual year, as in the template's chart
+const F = R.fan, fy = F.years, k0 = lastIdx(F.actual);
+const band = p => F.p[p].map((v,i)=> i===k0 ? F.actual[k0] : v);
+const fb = (lo, hi, name, alpha) => [
+  {type:'scatter', mode:'lines', x:fy, y:band(lo), line:{width:0}, showlegend:false, hoverinfo:'skip', connectgaps:false},
+  {type:'scatter', mode:'lines', x:fy, y:band(hi), line:{width:0}, fill:'tonexty', fillcolor:rgba(SER[0], alpha),
+   name, customdata:band(lo), hovertemplate:`${name}: %{customdata:.1f}% to %{y:.1f}%<extra></extra>`}];
+Plotly.newPlot('srfan', [...fb('5','95','5th–95th percentile',0.16), ...fb('25','75','25th–75th percentile',0.34),
+  sline(fy, F.actual, 'Actual', ink, {line:{color:ink, width:2}}),
+  sline(fy, F.baseline, 'Baseline', SER[1], {line:{color:SER[1], width:2}})],
+  LL({yaxis:{gridcolor:grid, ticksuffix:'%', rangemode:'tozero'}}), cfg);
+
+// near-term logit: driver contributions to the change in the stress probability, one stacked bar per year
+const G = R.logit, gx = G.years.map(String), avail = G.lsp.map(v=>typeof v==='number');
+const lspNow = G.lsp.filter(v=>typeof v==='number');
+document.getElementById('srlogitn').innerHTML = (lspNow.length ? `Logit stress probability ${pct(lspNow[lspNow.length-1],1)} (year of data ${G.years[lastIdx(G.lsp.map(v=>typeof v==='number'?v:null))]}). ` : '')
+  + 'Bars: contribution of each driver to the change in the probability from the year before, percentage points. Data for year t predict stress in t+1 to t+2.'
+  + (avail.some(a=>!a) ? ' Years marked n.a. have no value in the template sample.' : '');
+Plotly.newPlot('srlogit', [...G.drivers.map((d,i)=>({type:'bar', name:d.name, x:gx, y:d.values.map(v=>v==null?null:100*v),
+    marker:{color:SER[i], line:{color:surf, width:1}}, customdata:G.windows, hovertemplate:`${d.name}: %{y:+.2f} pp<extra></extra>`})),
+  {type:'scatter', mode:'markers', name:'Total change', x:gx, y:G.change.map(v=>typeof v==='number'?100*v:null),
+    marker:{symbol:'diamond', size:11, color:ink, line:{color:surf, width:2}}, customdata:G.windows, hovertemplate:'Total change: %{y:+.2f} pp (predicts stress in %{customdata})<extra></extra>'}],
+  L({barmode:'relative', bargap:0.45, hovermode:'x unified', margin:{l:45,r:10,t:10,b:55}, legend:{orientation:'h', y:-0.3},
+    yaxis:{gridcolor:grid, ticksuffix:' pp', zeroline:true, zerolinecolor:muted}, xaxis:{gridcolor:grid, type:'category', categoryorder:'array', categoryarray:gx, range:[-0.5, gx.length-0.5], tickangle:0, title:{text:'Year of data', font:{size:11}}},
+    annotations:gx.map((x,i)=>[x,i]).filter(([,i])=>!avail[i]).map(([,i])=>({x:i, y:0, yanchor:'bottom', text:'n.a.', showarrow:false, font:{size:11, color:muted}}))}), cfg);
+
+// GFN path
+const N = R.gfn;
+Plotly.newPlot('srgfn', [sline(N.years, N.actual, 'Actual', ink), sline(N.years, N.baseline, 'Baseline', SER[0]),
+  sline(N.years, N.stress, 'Stress scenario', SER[1], {line:{color:SER[1], width:2, dash:'dash'}})],
+  LL({yaxis:{gridcolor:grid, ticksuffix:'%', rangemode:'tozero'}}), cfg);
+
+// medium-term index: weighted normalized components stacked, against the low/high thresholds
+const M = R.mt, xmax = Math.max(0.6, 1.25*(M.index||0), 1.15*(M.high||0));
+document.getElementById('srmtn').innerHTML = M.index==null ? 'Medium-term index not available.' :
+  `Index ${num(M.index,3)} · mechanical signal ${chip(M.signal)} · final assessment ${chip(M.final)}. Thresholds ${num(M.low,3)} (low) and ${num(M.high,3)} (high).`;
+const zone = (x0, x1, s, label) => ({type:'rect', xref:'x', yref:'paper', x0, x1, y0:0, y1:1, fillcolor:ST[s].c, opacity:0.13, line:{width:0}, layer:'below'});
+const zl = (x, t) => ({x, y:1, yref:'paper', yanchor:'bottom', text:t, showarrow:false, font:{size:11, color:ink}});
+const parts = [['Debt fanchart', M.dfi_norm, M.weights[0], M.dfi], ['GFN financeability', M.gfi_norm, M.weights[1], M.gfi]];
+Plotly.newPlot('srmti', M.index==null ? [] : [...parts.map(([n,v,w,raw],i)=>({type:'bar', orientation:'h', name:`${n} (weight ${w})`, y:['Index'], x:[v*w],
+    marker:{color:SER[i], line:{color:surf, width:2}}, customdata:[[v, raw]], hovertemplate:`${n}: index %{customdata[1]:.2f}, normalized %{customdata[0]:.3f}, weighted %{x:.3f}<extra></extra>`})),
+  {type:'scatter', mode:'markers+text', name:'Medium-term index', y:['Index'], x:[M.index], marker:{symbol:'line-ns', size:30, line:{color:ink, width:3}},
+    text:[num(M.index,3)], textposition:'middle right', textfont:{color:ink, size:12}, hovertemplate:'Medium-term index %{x:.3f}<extra></extra>'}],
+  L({barmode:'stack', margin:{l:45,r:10,t:22,b:30}, legend:{orientation:'h', y:-0.35}, xaxis:{range:[0,xmax], gridcolor:grid}, yaxis:{showticklabels:false},
+    shapes:[zone(0,M.low,'Low'), zone(M.low,M.high,'Moderate'), zone(M.high,xmax,'High')],
+    annotations:[zl(M.low/2,'▽ Low'), zl((M.low+M.high)/2,'◇ Moderate'), zl((M.high+xmax)/2,'△ High')]}), cfg);
+document.getElementById('srmtt').innerHTML = '<table><tr><th>Component</th><th>Value</th><th>Contribution</th></tr>'
+  + M.components.map(c=>`<tr><td>${esc(c.label)}</td><td>${num(c.value,1)}</td><td>${num(c.contribution,2)}</td></tr>`).join('')
+  + `<tr><td>Debt fanchart index · GFN financeability index</td><td colspan="2">${num(M.dfi,2)} · ${num(M.gfi,2)}</td></tr></table>`
+  + `<div class="muted" style="font-size:12px;margin-top:6px">${M.notes.filter(Boolean).map(esc).join(' ')}${M.history.slice(0,-1).every(v=>v==null) ? ` Earlier years (${M.years.slice(0,-1).join(', ')}) are not available in the sample.` : ''}</div>`;
+
+// stress tests: colour follows the test (fixed slot), never its rank
+const S = R.stress, act = S.tests.map((t,i)=>[t,i]).filter(([t])=>t.active);
+const stc = (key, base, actual) => [sline(S.years, S[actual], 'Actual', ink), sline(S.years, S[base], 'Baseline', muted, {line:{color:muted, width:2, dash:'dot'}}),
+  ...act.map(([t,i])=>sline(S.years, t[key], t.name, SER[i]))];
+if (!act.length) ['srstd','srstg'].forEach(id => document.getElementById(id).previousElementSibling.textContent += ' (none is activated in the sample, so only the baseline is shown)');
+Plotly.newPlot('srstd', stc('debt', 'debt_baseline', 'debt_actual'), LL({yaxis:{gridcolor:grid, ticksuffix:'%', rangemode:'tozero'}}), cfg);
+Plotly.newPlot('srstg', stc('gfn', 'gfn_baseline', 'gfn_actual'), LL({yaxis:{gridcolor:grid, ticksuffix:'%', rangemode:'tozero'}}), cfg);
+document.getElementById('srstn').innerHTML = '<table><tr><th>Stress test</th><th>Status</th></tr>'
+  + S.tests.map((t,i)=>`<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${SER[i]};margin-right:6px"></span>${t.name}</td><td>${t.active ? '<b>Activated</b>' : '<span class="muted">Not activated</span>'}</td></tr>`).join('') + '</table>'
+  + '<div class="muted" style="font-size:12px;margin-top:6px">The template runs a stress test only when its trigger fires (Signals sheet, "Activated" column); an activated test adds its path to the two charts.</div>';
+
+// table view
+const tbl = (title, years, rows, d=1) => `<h2 style="margin-top:12px">${title}</h2><table><tr><th></th>${years.map(y=>`<th>${y}</th>`).join('')}</tr>`
+  + rows.map(([n,v])=>`<tr><td>${esc(n)}</td>${v.map(x=>`<td>${typeof x==='number' ? num(x,d) : ''}</td>`).join('')}</tr>`).join('') + '</table>';
+document.getElementById('srtable').innerHTML = tbl('Debt, % of GDP', fy, [['Actual', F.actual], ['Baseline', F.baseline],
+    ...['5','25','50','75','95'].map(p=>[`Percentile ${p}`, F.p[p]]), ...S.tests.filter(t=>t.active).map(t=>[t.name, t.debt])])
+  + tbl('Gross financing needs, % of GDP', N.years, [['Actual', N.actual], ['Baseline', N.baseline], ['Stress scenario', N.stress], ...S.tests.filter(t=>t.active).map(t=>[t.name, t.gfn])])
+  + tbl('Near-term logit, percentage points (year of data)', G.years, [['Stress probability (%)', G.lsp.map(v=>typeof v==='number'?100*v:null)],
+    ['Change', G.change.map(v=>typeof v==='number'?100*v:null)], ...G.drivers.map(d=>[d.name, d.values.map(v=>v==null?null:100*v)])], 2);
+
+const ru = R.run;
+document.getElementById('srfoot').innerHTML = '<b>Sample country.</b> The numbers are the fictional sample shipped with the IMF template, run through the Python port. '
+  + 'The template\'s country selector (Questions!C4) is set to a listed emerging-market country only so that its peer-group lookups (country group, IFS code, currency union) resolve; '
+  + 'none of that country\'s data are used and the output does not describe it. '
+  + `Fan chart from ${ru.fan_paths ? ru.fan_paths.toLocaleString('en-US') : 'the'} simulated paths with the template's stored seed; GFN converge macro ${ru.gfn_converged ? 'converged' : 'did not converge' + (ru.gfn_note ? ` (${esc(ru.gfn_note)})` : '')}; `
+  + `${ru.passes} formula passes, ${ru.settled ? 'settled' : 'not settled'}. Sources: ` + R.sources.map(([a,b])=>`${a}: ${b}`).join('; ') + '.';
+}}
 </script></body></html>'''
 
 

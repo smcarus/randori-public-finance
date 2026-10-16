@@ -1,4 +1,6 @@
 """Lever and dashboard tests that need no analyst inputs."""
+import json
+
 import pytest
 
 from sovrisk import load_config
@@ -43,3 +45,20 @@ def test_dashboard_has_muni_section():
     U = data['muni']
     assert len(U['towns']) == 10 and U['model'].startswith('M-15')
     assert 'Municipal credit scorecard' in render(data)
+
+
+def test_dashboard_has_srdsf_section():
+    data = dashboard_data(load_config())
+    R = data['srdsf']
+    sig = {s['label']: s for s in R['signals']}
+    assert sig['Medium term']['mechanical'] == 'High' and sig['Medium term']['final'] == 'Moderate'
+    assert sig['Overall']['final'] == 'Low' and sig['Medium term: fanchart']['mechanical'] == 'High'
+    assert R['mt']['index'] == pytest.approx(0.4046, abs=1e-3) and R['mt']['signal'] == 'High'
+    assert R['fan']['years'][0] == 2018 and len(R['fan']['p']['95']) == len(R['fan']['years'])
+    assert len(R['stress']['tests']) == 5 and R['run']['settled'] and R['run']['gfn_converged']
+    html = render(data)
+    assert 'Debt sustainability (MAC SRDSF)' in html and 'not endorsed by the IMF' in html
+    assert 'Sample country (fictional data from the IMF template)' in html
+    sec = html[html.index('<section id="srdsf">'):html.index('</section>', html.index('<section id="srdsf">'))]
+    assert 'Albania' not in json.dumps(R) and 'Albania' not in sec   # the selector country drives lookups only
+    assert 'Debt sustainability (MAC SRDSF)' in render(dict(data, srdsf=None))   # section hides itself, page renders
