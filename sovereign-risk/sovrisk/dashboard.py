@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import load_config, muni, pfram, run_model
+from . import ews, load_config, muni, pfram, run_model, spillover
 from .backtest import pd_backtest
 from .config import ROOT
 from .decisions import bond_table, default_table, pri_book, _rows
@@ -118,6 +118,8 @@ def dashboard_data(cfg, root=ROOT):
         'pfram': pfram_data(root),
         'muni': muni_data(root),
         'srdsf': srdsf_data(root),
+        'ews': ews_data(root),
+        'spill': spillover_data(root),
     })
 
 
@@ -131,6 +133,85 @@ def muni_data(root=ROOT):
             'cases': list(rb.get('stress', {})),
             'stress_notes': {c: [x['note'] for x in v] for c, v in rb.get('stress', {}).items()},
             'towns': r['towns']}
+
+
+def ews_data(root=ROOT):
+    """Macro early-warning panel (sovrisk.ews, M-22). Always carries the rulebook thresholds and the notes on missing
+    files; with data/ews_panel.csv it also carries each country's ratings, score and indicator history."""
+    root = Path(root)
+    if not (root / 'rulebook' / 'ews.yaml').exists():
+        return None
+    cfg = ews.load(root)
+    rb = cfg['rulebook']
+    out = {'model': ews.MODEL, 'has_data': bool(cfg['panel']), 'notes': cfg['notes'],
+           'needs': [{'file': 'data/ews_panel.csv', 'required': True}, {'file': 'data/crisis_dates.csv', 'required': False}],
+           'indicators': [{k: i.get(k) for k in ('id', 'label', 'unit', 'bad', 'amber', 'red', 'weight', 'optional', 'note')}
+                          for i in rb['indicators']],
+           'points': rb.get('points'), 'countries': {}, 'series': {}, 'weighting': None}
+    for n in out['needs']:
+        n['missing'] = not (root / n['file']).exists()
+    if not cfg['panel']:
+        return _clean(out)
+    t = ews.ews_table(cfg)
+    out.update(weighting=t['weighting'], weights=t['weights'], notes=t['notes'], countries=t['countries'])
+    for r in sorted(ews.fill_derived(rb, cfg['panel']), key=lambda r: int(r['year'])):
+        s = out['series'].setdefault(str(r['country']), {'years': [], **{i['id']: [] for i in rb['indicators']}})
+        s['years'].append(int(r['year']))
+        for i in rb['indicators']:
+            s[i['id']].append(ews._val(r.get(i['id'])))
+    return _clean(out)
+
+
+def _rel(root, p):
+    try:
+        return Path(p).resolve().relative_to(Path(root).resolve()).as_posix()
+    except ValueError:
+        return str(p)
+
+
+def spillover_data(root=ROOT):
+    """Spillover network (sovrisk.spillover, M-23). Always carries the scenarios, the elasticities with their source
+    notes and the missing exposure files; with exposure data it also carries every scenario's GDP impact by channel
+    and the exposures to each scenario's shocked partners."""
+    root = Path(root)
+    if not (root / 'rulebook' / 'spillover.yaml').exists():
+        return None
+    rb = spillover.load_rulebook(root)
+    ex, missing = spillover.load_exposures(root, rb)
+    params = []
+    for ch, c in list(rb['channels'].items()) + [('second_round', rb.get('second_round', {}))]:
+        for k, v in c.items():
+            if isinstance(v, (int, float)) and not isinstance(v, bool) and f'{k}_source' in c:
+                src = ' '.join(str(c[f'{k}_source']).split())
+                params.append({'channel': ch, 'param': k, 'value': v, 'source': src, 'draft': 'to verify' in src.lower()})
+    out = {'model': spillover.MODEL, 'channels': {ch: rb['channels'][ch]['label'] for ch in spillover.CHANNELS},
+           'files': {ch: 'data/' + rb['channels'][ch]['file'] for ch in spillover.CHANNELS},
+           'missing': [_rel(root, m) for m in missing], 'params': params,
+           'scenarios': {k: {'label': s.get('label', k), 'gdp': s.get('gdp') or {}, 'price': s.get('price') or {},
+                             'rate': s.get('rate') or {}} for k, s in rb['scenarios'].items()},
+           'has_data': any(ex.values()), 'results': {}, 'exposure': {}}
+    if not out['has_data']:
+        return _clean(out)
+    lat = {ch: spillover.latest(ex[ch]) for ch in spillover.CHANNELS}
+    every = sorted({c for v in lat.values() for c, _ in v})
+    for k, s in out['scenarios'].items():
+        try:
+            r = spillover.run(k, ex, rb)
+            out['results'][k] = {'n_rounds': r['n_rounds'], 'countries': {c: {f: x[f] for f in ('by_channel', 'first', 'second', 'total')}
+                                                                          for c, x in r['countries'].items()}}
+        except ValueError as e:
+            out['results'][k] = {'error': str(e), 'countries': {}}
+        cols = []   # exposure to the partners this scenario shocks, % of GDP of the receiving country
+        for ch in ('trade', 'banks', 'remittances'):
+            cols += [{'channel': ch, 'partner': p, 'values': {c: lat[ch].get((c, p)) for c in every}} for p in s['gdp']]
+        cols += [{'channel': 'commodities', 'partner': p, 'values': {c: lat['commodities'].get((c, p)) for c in every}}
+                 for p in s['price']]
+        if 'USD' in s['rate']:   # what the rates channel prices: US dollar share of debt x gross financing need
+            v = {c: (lat['rates'][(c, 'usd_debt_share')] * lat['rates'][(c, 'gfn')] / 100
+                     if (c, 'usd_debt_share') in lat['rates'] and (c, 'gfn') in lat['rates'] else None) for c in every}
+            cols.append({'channel': 'rates', 'partner': 'USD gross financing need', 'values': v})
+        out['exposure'][k] = [c for c in cols if any(x is not None for x in c['values'].values())]
+    return _clean(out)
 
 
 def pfram_data(root=ROOT):
@@ -336,6 +417,11 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 .tog.on .sw{background:#2e7d5b}.tog.on .sw:after{left:16px}.badge{display:inline-block;margin:2px 0;font-size:12px;padding:1px 6px;border-radius:4px;background:rgba(46,125,91,.12);color:#2e7d5b;font-weight:600}.badge.none{background:var(--line);color:var(--muted);font-weight:400}
 .tog:focus-within{outline:2px solid #2e7d5b}.kpi em{display:block;font-style:normal;font-size:12px;color:#2e7d5b;font-weight:600}
 .rm{display:grid;grid-template-columns:70px repeat(3,1fr);gap:4px;font-size:12px}.rm div{padding:6px;border-radius:6px;min-height:54px}.rm .ax{color:var(--muted);font-weight:600;min-height:0;display:flex;align-items:center}.rm b{display:block;font-size:11px}.kpi small{font-size:12px;font-weight:400}details summary{cursor:pointer;color:var(--muted)}.scroll{overflow-x:auto}
+.empty{margin-top:12px;border-style:dashed}.empty h3{font-size:14px;margin:0 0 6px}.empty ul{margin:6px 0;padding-left:18px}.empty code,.src code{font-size:12px}
+.chipx{display:inline-block;white-space:nowrap;padding:1px 7px;border-radius:4px;font-weight:600;font-size:12px}
+.sbar{display:flex;align-items:center;gap:6px;min-width:120px}.sbar i{display:block;height:10px;border-radius:0 4px 4px 0;background:var(--sbar)}.sbar span{font-variant-numeric:tabular-nums}
+.ewsm{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.ewsm .card{padding:10px}.ewsm h3{font-size:13px;margin:0}.ewsm .chart{height:190px}
+.src{font-size:12px;color:var(--muted)}.par{padding:7px 0;border-bottom:1px solid var(--line)}.par .src{margin-top:2px}tr.pick td{background:rgba(127,127,127,.08)}td.c{cursor:pointer}
 .chart{width:100%;height:320px}#map{height:430px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 12px}
 </style></head><body>
 <div class="banner">FOR RESEARCH PURPOSES ONLY. CONFIDENTIAL. Untested, preliminary and illustrative. Not investment advice and not a credit rating.</div>
@@ -414,6 +500,33 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 </div>
 <div class="card" style="margin-top:16px"><details><summary>Data tables for these charts</summary><div class="scroll" id="srtable"></div></details></div>
 <div class="muted" id="srfoot" style="margin-top:10px;font-size:12px"></div>
+</section>
+<section id="ews">
+<div class="row"><h2 style="margin:0">Macro early-warning panel</h2><span class="tag" id="ewtag">M-22 v0.1 · untested · not a rating</span></div>
+<div class="muted" id="ewsub"></div>
+<div id="ewempty"></div>
+<div id="ewbody" hidden>
+<div class="card" style="margin-top:12px"><h2>Countries by warning score</h2><div class="muted" id="ewtn"></div><div class="scroll" id="ewtab" style="margin-top:8px"></div></div>
+<div class="row"><h2 style="margin:0" id="ewname"></h2><select id="ewpick" aria-label="Country"></select></div>
+<div class="muted" id="ewcn"></div>
+<div class="ewsm" id="ewsm"></div>
+</div>
+<div class="card" style="margin-top:16px" id="ewthwrap"><h2>Indicator thresholds</h2><div class="muted">From rulebook/ews.yaml. Draft thresholds for review; they need no country data.</div><div class="scroll" id="ewth" style="margin-top:8px"></div></div>
+</section>
+<section id="spill">
+<div class="row"><h2 style="margin:0">Spillover network</h2><span class="tag" id="sptag">M-23 v0.1 · untested · draft elasticities</span></div>
+<div class="muted" id="spsub"></div>
+<div id="spempty"></div>
+<div id="spbody" hidden>
+<div class="row"><label for="sppick" class="muted">Scenario</label><select id="sppick"></select><span class="muted" id="spshock"></span></div>
+<div class="grid">
+<div class="card"><h2>GDP impact by channel</h2><div class="muted" id="spbn">% change in GDP, first and second round together. The diamond is the total.</div><div id="spbar" class="chart" style="height:380px"></div></div>
+<div class="card"><h2>Exposure to the shocked partners</h2><div class="muted" id="sphn">% of the receiving country's GDP, latest year</div><div id="spheat" class="chart" style="height:380px"></div></div>
+</div>
+<div class="card" style="margin-top:16px"><details><summary>Table: impact by channel and round</summary><div class="scroll" id="sptable"></div></details></div>
+</div>
+<div class="card" style="margin-top:16px"><h2>Scenarios</h2><div class="muted">From rulebook/spillover.yaml. A scenario shocks only what it lists.</div><div class="scroll" id="spscen" style="margin-top:8px"></div></div>
+<div class="card" style="margin-top:16px"><h2>Elasticities</h2><div class="muted">From rulebook/spillover.yaml. None is a fitted estimate.</div><div class="scroll" id="sppar" style="margin-top:8px"></div></div>
 </section>
 </main>
 <script>window.PlotlyGeoAssets = {topojson: {world_110m: __WORLD__}};</script>
@@ -802,6 +915,119 @@ document.getElementById('srfoot').innerHTML = '<b>Sample country.</b> The number
   + `Fan chart from ${ru.fan_paths ? ru.fan_paths.toLocaleString('en-US') : 'the'} simulated paths with the template's stored seed; GFN converge macro ${ru.gfn_converged ? 'converged' : 'did not converge' + (ru.gfn_note ? ` (${esc(ru.gfn_note)})` : '')}; `
   + `${ru.passes} formula passes, ${ru.settled ? 'settled' : 'not settled'}. Sources: ` + R.sources.map(([a,b])=>`${a}: ${b}`).join('; ') + '.';
 }}
+
+// ---------------------------------------------------------------- shared by the M-22 and M-23 sections
+const SER5 = dark ? ['#3987e5','#d95926','#199e70','#c98500','#d55181'] : ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4'];   // validated categorical slots 1-5
+const ink2 = dark ? '#9aa4b2' : '#5b6575', surf2 = dark ? '#1b2129' : '#fff';
+const esc2 = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const rgba2 = (h, a) => `rgba(${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)},${a})`;
+const fv = v => v==null ? 'n/a' : (Math.abs(v)>=100 ? v.toFixed(0) : v.toFixed(1));
+const emptyCard = (items, tail) => `<div class="card empty"><h3>No country data is loaded.</h3><div class="muted">This section needs these files in <code>data/</code>, none of which ship with the repository:</div><ul>${items.join('')}</ul><div class="muted">${tail}</div></div>`;
+
+// ---------------------------------------------------------------- macro early-warning panel (M-22)
+{ const E = D.ews;
+if (!E) { document.getElementById('ews').style.display = 'none'; } else {
+// status chips as in the SRDSF section: icon + label + value, never colour alone
+const RT = {green:{c:'#0ca30c', i:'▽', t:'Green'}, amber:{c:'#fab219', i:'◇', t:'Amber'}, red:{c:'#ec835a', i:'△', t:'Red'}};
+const chipR = (g, txt, bare) => { const s = RT[g]; return `<span class="chipx" style="border:1px solid ${s.c};background:${s.c}2e">${s.i}${bare ? '' : ' ' + s.t}${txt ? ' ' + txt : ''}</span>`; };
+const IN = E.indicators, cmp = i => i.bad==='low' ? '&lt;' : '&gt;';
+document.getElementById('ewtag').textContent = `${E.model} · untested · not a rating`;
+document.getElementById('ewsub').textContent = 'Green / amber / red ratings on external, credit and price indicators against the thresholds in rulebook/ews.yaml, and a warning score from 0 (all green) to 100 (all red). Not a credit rating.';
+document.getElementById('ewth').innerHTML = '<table><tr><th>Indicator (unit)</th><th>Amber</th><th>Red</th><th>Risky when</th></tr>'
+  + IN.map(i=>`<tr><td>${esc2(i.label)} <span class="muted">(${esc2(i.unit)})</span>${i.optional ? ' <span class="muted">optional</span>' : ''}${i.note ? `<div class="src">${esc2(i.note)}</div>` : ''}</td>`
+    + `<td>${chipR('amber', cmp(i) + ' ' + i.amber, 1)}</td><td>${chipR('red', cmp(i) + ' ' + i.red, 1)}</td>`
+    + `<td>${i.bad==='low' ? 'low' : 'high'}</td></tr>`).join('') + '</table>'
+  + `<div class="muted" style="font-size:12px;margin-top:6px">Breaching a threshold is strict. Points per rating: green ${E.points.green}, amber ${E.points.amber}, red ${E.points.red}. Fallback weights: ${IN.every(i=>i.weight===IN[0].weight) ? `${IN[0].weight} for every indicator` : IN.map(i=>`${esc2(i.label)} ${i.weight}`).join(', ')}; with data/crisis_dates.csv they come from the signals method (1 / noise-to-signal ratio).</div>`;
+if (!E.has_data) {
+  document.getElementById('ewempty').innerHTML = emptyCard(E.notes.map(n=>{ const m = n.match(/^(\S+) is missing:?\s*(.*)$/);
+      return m ? `<li><code>${esc2(m[1])}</code>${/ews_panel/.test(m[1]) ? ' (required)' : ' (optional)'}: ${esc2(m[2])}</li>` : `<li>${esc2(n)}</li>`; }),
+    'See <b>docs/DATA.md</b> for the columns, units and sources, and for fetching the panel or entering it by hand. The thresholds below need no data.');
+} else {
+document.getElementById('ewbody').hidden = false;
+const C = E.countries, cn = Object.keys(C).sort((a,b)=>(C[b].score??-1)-(C[a].score??-1) || a.localeCompare(b));
+document.getElementById('ewtn').textContent = `Sorted by warning score. Weights: ${E.weighting}. * computed here from credit_gdp or reer (not supplied). A year in brackets is an older value used for a missing year. Click a row for the indicator history.`
+  + (E.notes.length ? ' ' + E.notes.join(' ') : '');
+const tab = document.getElementById('ewtab'); tab.style.setProperty('--sbar', SER5[0]);
+tab.innerHTML = '<table><tr><th>Country</th><th>Year</th><th>Warning score</th>' + IN.map(i=>`<th>${esc2(i.label)}<br><span style="font-weight:400">${esc2(i.unit)}</span></th>`).join('') + '</tr>'
+  + cn.map(c=>{ const s = C[c];
+      return `<tr data-c="${esc2(c)}"><td class="c"><b>${esc2(c)}</b></td><td>${s.year}</td><td><div class="sbar" title="Warning score ${fv(s.score)}"><i style="width:${s.score==null?0:Math.max(2,s.score)}px"></i><span>${s.score==null ? 'n/a' : s.score.toFixed(0)}</span></div></td>`
+        + IN.map(i=>{ const x = s.indicators[i.id];
+            return `<td>${x.rating ? chipR(x.rating, fv(x.value) + (x.derived ? '*' : '') + (x.year!==s.year ? ` (${x.year})` : '')) : '<span class="muted">no data</span>'}</td>`; }).join('') + '</tr>'; }).join('') + '</table>';
+tab.querySelectorAll('tr[data-c]').forEach(tr => { tr.style.cursor = 'pointer'; tr.onclick = () => showEws(tr.dataset.c); });
+const ep = document.getElementById('ewpick'); cn.forEach(c => ep.add(new Option(c, c))); ep.onchange = () => showEws(ep.value);
+const sm = document.getElementById('ewsm');
+function showEws(c){
+  const s = C[c], H = E.series[c]; ep.value = c;
+  tab.querySelectorAll('tr[data-c]').forEach(tr => tr.classList.toggle('pick', tr.dataset.c===c));
+  document.getElementById('ewname').textContent = `${c}: indicator history`;
+  document.getElementById('ewcn').innerHTML = `Warning score <b>${fv(s.score)}</b> in ${s.year} · weight covered ${pct(s.coverage,0)} · top drivers: ${s.drivers.length ? s.drivers.map(esc2).join(', ') : 'none'}. Shaded bands: ◇ amber and △ red zones from the rulebook.`;
+  sm.querySelectorAll('.chart').forEach(d => Plotly.purge(d));
+  const show = IN.filter(i => H && H[i.id].some(v=>v!=null));
+  sm.innerHTML = show.map(i=>`<div class="card"><h3>${esc2(i.label)}</h3><div class="muted" style="font-size:12px">${esc2(i.unit)} · risky when ${i.bad}${s.indicators[i.id].derived ? ' · latest value computed here' : ''}</div><div class="chart" id="ewc_${i.id}"></div></div>`).join('')
+    + (show.length < IN.length ? `<div class="muted" style="font-size:12px;align-self:center">No data for: ${IN.filter(i=>!show.includes(i)).map(i=>esc2(i.label)).join(', ')}.</div>` : '');
+  show.forEach(i => {
+    const ys = H[i.id], xs = H.years, v = ys.filter(x=>x!=null).concat([i.amber, i.red]);
+    let lo = Math.min(...v), hi = Math.max(...v); const pad = 0.12*(hi-lo || 1); lo -= pad; hi += pad;
+    const [ab, rb] = i.bad==='high' ? [[i.amber, i.red], [i.red, hi]] : [[i.red, i.amber], [lo, i.red]];
+    const bandS = ([y0, y1], g) => ({type:'rect', xref:'paper', x0:0, x1:1, y0, y1, fillcolor:RT[g].c, opacity:0.16, line:{width:0}, layer:'below'});
+    const bandA = ([y0, y1], g) => ({xref:'paper', x:1, xanchor:'right', y:(y0+y1)/2, text:`${RT[g].i} ${g}`, showarrow:false, font:{size:10, color:ink2}, bgcolor:rgba2(surf2, 0.75)});
+    Plotly.newPlot('ewc_' + i.id, [{type:'scatter', mode:'lines+markers', x:xs, y:ys, connectgaps:false, line:{color:SER5[0], width:2},
+        marker:{size:5, color:SER5[0]}, hovertemplate:`%{x}: %{y:.1f} ${esc2(i.unit)}<extra></extra>`}],
+      L({margin:{l:36,r:8,t:6,b:24}, showlegend:false, xaxis:{gridcolor:grid, tickformat:'d', nticks:5}, yaxis:{gridcolor:grid, range:[lo, hi], nticks:5},
+        shapes:[bandS(ab,'amber'), bandS(rb,'red')], annotations:[bandA(ab,'amber'), bandA(rb,'red')]}), cfg);
+  });
+}
+showEws(cn[0]);
+}}}
+
+// ---------------------------------------------------------------- spillover network (M-23)
+{ const S = D.spill;
+if (!S) { document.getElementById('spill').style.display = 'none'; } else {
+const CH = Object.keys(S.channels), SHORT = {trade:'Trade', commodities:'Commodities', banks:'Banks', rates:'Rates', remittances:'Remittances'};
+const sgn = (v, u) => `${v>0?'+':v<0?'−':''}${Math.abs(v)}${u}`;
+const shockText = s => [...Object.entries(s.gdp).map(([k,v])=>`${k} GDP ${sgn(v,'%')}`), ...Object.entries(s.price).map(([k,v])=>`${k} price ${sgn(v,'%')}`),
+  ...Object.entries(s.rate).map(([k,v])=>`${k} rates ${sgn(v,' bp')}`)].join(', ');
+document.getElementById('sptag').textContent = `${S.model} · untested · draft elasticities`;
+document.getElementById('spsub').textContent = 'How a shock abroad hits each country\'s GDP through five channels (trade, commodities, banks, rates, remittances), first round plus damped second-round effects through trade. Results are % changes in GDP. Not a forecast.';
+document.getElementById('spscen').innerHTML = '<table><tr><th>Scenario</th><th>Shock</th><th>Id</th></tr>'
+  + Object.entries(S.scenarios).map(([k,s])=>`<tr><td>${esc2(s.label)}</td><td>${esc2(shockText(s))}</td><td><code style="font-size:12px">${esc2(k)}</code></td></tr>`).join('') + '</table>';
+document.getElementById('sppar').innerHTML = S.params.map(p=>`<div class="par"><div><b>${esc2(SHORT[p.channel] || 'Second round')}</b> · <code style="font-size:12px">${esc2(p.param)}</code> = <b>${p.value}</b> ${p.draft ? '<span class="tag">◇ Draft, to verify</span>' : ''}</div>`
+  + `<div class="src">${esc2(p.source)}</div></div>`).join('');
+if (!S.has_data) {
+  document.getElementById('spempty').innerHTML = emptyCard(S.missing.map(f=>{ const ch = CH.find(c=>S.files[c]===f);
+      return `<li><code>${esc2(f)}</code>${ch ? ': ' + esc2(S.channels[ch]) : ''}</li>`; }),
+    'Each is long format (country, partner, value_pct_gdp, year, source); a missing file counts that channel as zero. See <b>docs/DATA.md</b> for sources, and sovrisk/spillover_data.py for the fetch and parse helpers. The scenarios and elasticities below need no data.');
+} else {
+document.getElementById('spbody').hidden = false;
+if (S.missing.length) document.getElementById('spsub').textContent += ` Missing files (those channels count as zero): ${S.missing.join(', ')}.`;
+const sp = document.getElementById('sppick'); Object.entries(S.scenarios).forEach(([k,s]) => sp.add(new Option(s.label, k)));
+sp.onchange = () => showSpill(sp.value);
+const mid = dark ? '#3a4350' : '#e3e6eb';
+function showSpill(k){
+  const R = S.results[k] || {countries:{}}, X = R.countries, cs = Object.keys(X).sort((a,b)=>X[a].total-X[b].total);
+  document.getElementById('spshock').textContent = 'Shock: ' + shockText(S.scenarios[k]);
+  document.getElementById('spbn').textContent = R.error ? `Not computed: ${R.error}` : !cs.length ? 'No country is exposed to this shock in the data loaded.'
+    : `% change in GDP, first and second round together (second round converged in ${R.n_rounds - 1} rounds). The diamond is the total; worst hit on the left.`;
+  Plotly.react('spbar', cs.length ? [...CH.map((ch,i)=>({type:'bar', name:SHORT[ch], x:cs, y:cs.map(c=>X[c].by_channel[ch] || null), marker:{color:SER5[i], line:{color:surf2, width:1}},
+      customdata:cs.map(c=>[X[c].first[ch], X[c].second[ch]]), showlegend:true, hovertemplate:`${SHORT[ch]}: %{y:.3f}% (first round %{customdata[0]:.3f}, second %{customdata[1]:.3f})<extra></extra>`})),
+    {type:'scatter', mode:'markers', name:'Total', x:cs, y:cs.map(c=>X[c].total), marker:{symbol:'diamond', size:11, color:ink, line:{color:surf2, width:2}}, hovertemplate:'Total: %{y:.3f}%<extra></extra>'}] : [],
+    L({barmode:'relative', bargap:0.35, hovermode:'x unified', margin:{l:50,r:10,t:10,b:40}, legend:{orientation:'h', y:-0.18},
+      yaxis:{gridcolor:grid, ticksuffix:'%', zeroline:true, zerolinecolor:ink2}, xaxis:{gridcolor:grid, type:'category'}}), cfg);
+  const cols = S.exposure[k] || [], ec = cs.length ? cs : [...new Set(cols.flatMap(c=>Object.keys(c.values)))];
+  const z = ec.map(c=>cols.map(col=>col.values[c] ?? null)), zm = Math.max(1e-9, ...z.flat().filter(v=>v!=null).map(Math.abs));
+  document.getElementById('sphn').textContent = cols.length ? '% of the receiving country\'s GDP, latest year, for the partners this scenario shocks. Commodities are net exports (negative: net importer, gains on a price fall). Rates: US dollar share of public debt × gross financing need. Blank: no data.'
+    : 'No exposure data for the partners this scenario shocks.';
+  Plotly.react('spheat', cols.length ? [{type:'heatmap', x:cols.map(c=>`${SHORT[c.channel]}<br>${c.partner}`), y:ec, z, zmin:-zm, zmax:zm, zmid:0,
+      colorscale:[[0, SER5[0]], [0.5, mid], [1, SER5[1]]], xgap:2, ygap:2, text:z.map(r=>r.map(v=>v==null ? '' : v.toFixed(1))), texttemplate:'%{text}',
+      colorbar:{title:{text:'% GDP', side:'right'}, thickness:10}, hovertemplate:'%{y} · %{x}: %{z:.2f}% of GDP<extra></extra>', hoverongaps:false}] : [],
+    L({margin:{l:50,r:10,t:10,b:60}, xaxis:{side:'bottom', tickangle:0, showgrid:false, zeroline:false}, yaxis:{type:'category', autorange:'reversed', showgrid:false, zeroline:false}}), cfg);
+  document.getElementById('sptable').innerHTML = '<table><tr><th>Country</th>' + CH.map(ch=>`<th>${SHORT[ch]}</th>`).join('') + '<th>First round</th><th>Second round</th><th>Total</th></tr>'
+    + cs.map(c=>{ const x = X[c], sum = o => CH.reduce((a,ch)=>a+o[ch],0);
+        return `<tr><td>${esc2(c)}</td>${CH.map(ch=>`<td>${x.by_channel[ch].toFixed(3)}</td>`).join('')}<td>${sum(x.first).toFixed(3)}</td><td>${sum(x.second).toFixed(3)}</td><td><b>${x.total.toFixed(3)}</b></td></tr>`; }).join('')
+    + '</table><div class="muted" style="font-size:12px;margin-top:6px">% change in GDP. Second-round effects are traced back to the channel that started them.</div>';
+}
+showSpill(Object.keys(S.scenarios)[0]);
+}}}
 </script></body></html>'''
 
 
