@@ -10,7 +10,7 @@ years around the first projection year and shapes them for one chart:
   rows  207-263  realism: 3-year CAPB adjustment against the cross-country distribution
   rows  293-301  realism: forecast track record of real GDP growth, output gap
   rows  311-458  fiscal multiplier paths: growth impact of the fiscal adjustment for multipliers 0.5 / 1 / 1.5
-  rows  465-487  bond spreads: new local-currency market issuance by maturity, inflation, Laubach (2009) rule
+  rows  465-487  bond spreads: new market issuance (in local currency) by maturity, inflation, Laubach (2009) rule
   rows  495-501  GFN (baseline vs GFN module)                rows  515-545  fanchart with stress-test paths
   rows  550-567  gross financing needs with stress tests     rows 3598-3603  medium-term index vs thresholds
   rows 3615-4533 cross-country comparison of the medium-term tool indices (rank, percentile by peer group)
@@ -45,7 +45,7 @@ QUIRKS = [
     'B4538 reads column 10 of SignalsTable ("Transformed index") for SIG-MT and O4538 for SIG-NT: both #N/A in '
     'the sample, so the missed-crisis / false-alarm texts on Output are #N/A too.',
     'Array formulas: only the anchor cell of TRANSPOSE(...) (H318, H319, H320, C353) is a formula cell; the rest '
-    'of each spilled range is stored as values in the template and is not recomputed here.',
+    'of each spilled range is not computed by compute(); run.fill_spills spills it (run.SPILLS).',
     'C315:M315 fall back, when Macrofw has no CAPB, to the derived CAPB of row 222 sixteen columns to the right '
     '(S222 for C315), a different year.',
     'E169/E170 and E226/E227 (the "Row Number" of the country value in the histogram) are array formulas: '
@@ -719,8 +719,8 @@ def multiplier_block(e, x, base, mc):
 
 
 def issuance(e, x, sumifs, r, c, fcrit):
-    """New local-law market debt of one maturity bucket issued in year c (IdentFin + ResidFin), converted to
-    local currency and taken in percent of GDP."""
+    """New market debt (all currencies) of one maturity bucket issued in year c (IdentFin + ResidFin), converted
+    to local currency and taken in percent of GDP."""
     yc = c + 13                                                        # IdentFin/ResidFin year column (H -> U)
     year = e(468, c)
 

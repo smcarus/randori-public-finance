@@ -27,7 +27,7 @@
 - Dom_Debt_Indicators, Output - Summary, Output - Submit: summary fields copied for the database and submission.
 
 How the port works: these sheets are mostly labels, look-ups and lightly transformed copies of user input,
-written as ~2,000 distinct one-off formula patterns. They are ported as the workbook's own formulas, one entry per
+written as ~900 distinct one-off formula patterns (about 5,400 formula cells). They are ported as the workbook's own formulas, one entry per
 block of cells sharing a pattern (the formula is written for the block's first cell and filled right / down over
 the block, as Excel copies it), and run by the small Excel evaluator in this module (`evaluate`). The blocks are
 listed by row with the row's label. localdebt.py and realism.py use the same evaluator.

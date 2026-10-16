@@ -1,6 +1,7 @@
 """Stability levers: switch on insurance, credit, banking, revenue and other measures and re-run the model exactly.
 
     python -m sovrisk.levers --country Belize --on cat_insurance,revenue
+    python -m sovrisk.levers --list
 
 Levers and their effects are in rulebook/levers.yaml (ILLUSTRATIVE magnitudes). Indicator effects move the
 indicator toward lower risk before scoring, so they flow through pillars, triggers, floors, the country score,
@@ -113,7 +114,7 @@ def lever_table(cfg, levers=None, model=None, root=ROOT):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='Re-run one country with stability levers switched on.')
-    ap.add_argument('--country', required=True)
+    ap.add_argument('--country', help='required unless --list')
     ap.add_argument('--on', default='', help='comma-separated lever ids; --list shows them')
     ap.add_argument('--list', action='store_true')
     a = ap.parse_args(argv)
@@ -123,6 +124,8 @@ def main(argv=None):
         for lv in L['levers']:
             print(f"{lv['id']:20s} {lv['category']:28s} {lv['label']}")
         return
+    if not a.country:
+        ap.error('--country is required unless --list is given')
     on = [x for x in a.on.split(',') if x]
     b, w = run_with_levers(cfg, a.country, []), run_with_levers(cfg, a.country, on)
     print(f"{a.country}: score {b['score']:.1f} -> {w['score']:.1f}; PD {b['pd']:.2%} -> {w['pd']:.2%}; "

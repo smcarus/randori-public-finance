@@ -24,7 +24,7 @@ def derive(raw, ind, cfg, s, dshift=0.0):
         out['p1_debt'] = out['p1_ddebt'] = None
     else:
         b, c = paths['baseline'], paths['combined']
-        if c is None:   # no projections: baseline only (fixes a workbook offset bug, see README)
+        if c is None:   # no projections: baseline only (fixes a workbook row-offset bug)
             d27 = v('r_debt27') if v('r_debt27') is not None else (None if b[2027] is None else b[2027] + dshift)
             out['p1_debt'] = d27
             out['p1_ddebt'] = None

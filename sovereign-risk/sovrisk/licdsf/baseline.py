@@ -494,7 +494,7 @@ def TR(s, row):
 SHEETS = ['Baseline - public', 'Baseline - external', 'Customized Scenario - public', 'Customized Scenario-External']
 
 QUIRKS = [
-    'Baseline - public!O24 and X24 (revenue and grants, historical years) divide by nominal GDP using Macro-Debt_Data row 60 where every other year uses row 59.',
+    'Baseline - public!O24 and X24 (revenue and grants, historical years) test ISNUMBER of the ratio with Macro-Debt_Data row 60 where every other year tests it with row 59 (all years divide by row 60).',
     'Baseline - public!AN54, AN62, AN63 and AN66 average T:AH (one year early) where the other projection averages of column AN use U:AI.',
     'Baseline - external!N46 multiplies row 35 (PV of PPG external debt-to-GDP) by row 48, where O46 onwards use row 19 (exports).',
     "Baseline - external!C31 and D50, H50:L50 refer to deleted cells (#REF!) of Macro-Debt_Data / Ext_Debt_Data; their ISNUMBER tests fail, so they show '...' / '…'.",

@@ -811,7 +811,7 @@ pp.onchange = pc.onchange = showPF; showPF();
 // ---------------------------------------------------------------- MAC SRDSF (RPF-04)
 { const R = D.srdsf;
 if (!R) { document.getElementById('srdsf').style.display = 'none'; } else {
-// categorical slots 1-5 of the validated palette (validate_palette.js: light on #fff, dark on #1b2129, adjacent pairs)
+// categorical slots 1-5 of the validated palette (checked with a palette validator: light on #fff, dark on #1b2129, adjacent pairs)
 const SER = dark ? ['#3987e5','#d95926','#199e70','#c98500','#d55181'] : ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4'];
 const muted = dark ? '#9aa4b2' : '#5b6575', surf = dark ? '#1b2129' : '#fff';
 const ST = {Low:{c:'#0ca30c', i:'▽'}, Moderate:{c:'#fab219', i:'◇'}, High:{c:'#ec835a', i:'△'}, Yes:{c:'#0ca30c', i:'✓'}, No:{c:'#ec835a', i:'✗'}};

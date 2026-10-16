@@ -72,7 +72,8 @@ Divide each flow by the country's nominal GDP in US dollars (World Bank NY.GDP.M
     python -m sovrisk.spillover --list          # the five scenarios
     python -m sovrisk.spillover --scenario us_recession --rounds
 
-Both commands say which files are missing. Once the files exist, the dashboard sections can be built on them.
+Both commands say which files are missing. Once the files exist, rebuild the dashboard (`python -m sovrisk.dashboard`)
+and its early-warning and spillover sections fill in.
 
 ## Check before relying on results
 

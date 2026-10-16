@@ -1,7 +1,9 @@
-"""One-time extraction of RPF-01 v0.4 from the Excel workbook into config and data files.
+"""One-time extraction of RPF-01 from the Excel workbook into config and data files (scorecard tabs as of v0.4,
+decision tabs added in v0.5).
 
-Writes rulebook/*.yaml, data/*.csv and tests/golden/*.json. The golden files hold the
-workbook's own calculated values, which the parity tests compare against.
+Writes rulebook/*.yaml, data/*.csv, tests/golden/workbook_v0.4.json and tests/golden/workbook_v0.5_decisions.json.
+The golden files hold the workbook's own calculated values, which the private parity tests (test_parity.py)
+compare against; they are kept in the private copy only.
 
 Usage: python scripts/extract_workbook.py path/to/Randori_Country_Risk_Scores_Oct2026.xlsx
 """

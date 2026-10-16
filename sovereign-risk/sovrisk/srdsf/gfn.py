@@ -10,7 +10,7 @@ New market debt issued in the scenario is costed on the hidden Triangles sheet (
 the financing this sheet hands over through Config!GFNConvergeOut. The workbook closes that loop with the
 `converge` macro (ModGFN.bas), ported here as simulate(book).
 
-Shared Excel helpers used by triangles.py (criteria matching, SUMIFS/COUNTIF, comparisons, number-to-text) live
+Shared Excel helpers used by triangles.py and charts.py (criteria matching, SUMIFS/COUNTIF, comparisons, number-to-text) live
 here too.
 """
 import math
@@ -48,7 +48,7 @@ ALL = range(9, 26)             # I..Y: from ProjYr-1
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# Excel helpers shared with triangles.py
+# Excel helpers shared with triangles.py and charts.py
 # ---------------------------------------------------------------------------------------------------------------
 
 def ref(v):

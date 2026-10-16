@@ -40,8 +40,9 @@ pull request anyone can read.
 
 The template sheets read each other in cycles (for example IdentFin, ResidFin and BaseDB in the MAC SRDSF), although
 no single cell is circular. Each `run.py` therefore finds every module in its package that defines `SHEETS` and
-`compute(book, sheet)`, computes the sheets in a dependency-friendly order, and repeats the whole sequence
-(Gauss-Seidel) until a pass changes no value. A new sheet port joins the run as soon as its file exists. Macros run
+`compute(book, sheet)`, computes the sheets in a dependency-friendly order, and repeats the sequence
+(Gauss-Seidel) until a pass changes no value. Sheets whose inputs did not change are skipped, except in the first
+pass and the final, confirming pass. A new sheet port joins the run as soon as its file exists. Macros run
 after the formulas settle, and the formulas are recomputed after each one, as Excel recalculates after a macro.
 
 ## Interactions

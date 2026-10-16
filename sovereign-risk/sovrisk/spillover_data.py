@@ -12,7 +12,8 @@ Every file written has the long format the model reads: country, partner, value_
     remittances  World Bank bilateral remittance matrix (a spreadsheet download, no API), US$ -> % GDP
 
 The model keys countries by ISO3 (USA, CHN). IMF and BIS use ISO2 and Comtrade M49 numbers, so map codes to ISO3
-before writing; no mapping table is shipped here. GDP in US$ for the conversions comes from the World Bank (NY.GDP.MKTP.CD). Licences: IMF, BIS and World Bank data are
+before writing: scripts/fetch_country_data.py does this from data/country_codes.csv, which ships empty and must be
+filled. GDP in US$ for the conversions comes from the World Bank (NY.GDP.MKTP.CD). Licences: IMF, BIS and World Bank data are
 reusable with attribution; UN Comtrade has its own terms, check them before redistributing.
 Nothing here makes up data: a failed download raises an error saying what to fetch and where to put it.
 """

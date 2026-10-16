@@ -9,7 +9,7 @@ banks (claims of banks from the shocked lending country), rates (US dollar debt 
 remittances (inflows from the shocked sending country). First round: shock x exposure x the channel's elasticities.
 Second round: the first-round GDP losses travel through the trade matrix, damped, one round at a time, until they die
 out. Exposures are long-format CSVs in data/ (country, partner, value_pct_gdp, year, source), built by
-sovrisk/spillover_data.py from IMF, BIS, UN Comtrade and World Bank data. Elasticities, damping and scenarios live in
+scripts/fetch_country_data.py (parsers in sovrisk/spillover_data.py) from IMF, BIS, UN Comtrade and World Bank data. Elasticities, damping and scenarios live in
 rulebook/spillover.yaml. Results are % changes in GDP. Version 0.1 is untested and has no real data yet.
 """
 import argparse
@@ -165,7 +165,7 @@ def main(argv=None):
     ex, missing = load_exposures(root, rb)
     print(f'{MODEL}, untested. GDP impact in %. Not a forecast.')
     if missing:
-        print('Missing exposure files (those channels count as zero; build them with sovrisk/spillover_data.py):')
+        print('Missing exposure files (those channels count as zero; build them with scripts/fetch_country_data.py or by hand, see docs/DATA.md):')
         for m in missing:
             print(f'    {m}')
     if not any(ex.values()):

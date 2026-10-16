@@ -7,7 +7,7 @@ The new issuance is circular in the workbook's logic only through earlier vintag
 to cover the interest and amortization that the issues of years before t fall due for in year t, so issuance is
 solved column by column (row 27).
 
-The module also holds the small lazy evaluator that BaseDB shares (`Engine`, `X`): each formula cell is a rule,
+The module also holds the small lazy evaluator that BaseDB, Output and Charts share (`Engine`, `X`): each formula cell is a rule,
 and reading a cell computes it on demand, so cells are filled in dependency order whatever order the rules were
 declared in.
 """
@@ -36,7 +36,7 @@ QUIRKS = [
 ]
 
 # --------------------------------------------------------------------------------------------------------------
-# Excel value semantics for arithmetic, shared with basedb.py
+# Excel value semantics for arithmetic, shared with basedb.py, output.py and charts.py
 # --------------------------------------------------------------------------------------------------------------
 
 

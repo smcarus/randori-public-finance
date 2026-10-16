@@ -1,4 +1,8 @@
-"""sovrisk: Python port of the Randori RPF-01 sovereign risk scorecard (v0.5, UNTESTED, PRELIMINARY).
+"""sovrisk: Randori Public Finance risk models RPF-01 to RPF-06 (UNTESTED, PRELIMINARY).
+
+RPF-01 sovereign scorecard (sovrisk.model and the decision tools), RPF-02 PFRAM (sovrisk.pfram), RPF-03 municipal
+scorecard (sovrisk.muni), RPF-04 debt sustainability (sovrisk.srdsf, sovrisk.licdsf), RPF-05 early warning
+(sovrisk.ews) and RPF-06 spillover (sovrisk.spillover). See docs/models/ for one card per model.
 
 Not investment advice and not a credit rating.
 """

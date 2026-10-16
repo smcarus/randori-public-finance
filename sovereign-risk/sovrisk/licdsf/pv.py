@@ -479,7 +479,8 @@ MKT_RESFIN_LABELS = {4: 10, 5: 11, 6: 12, 7: 13, 8: 14, 9: 15, 12: 46,
 def pv_add_cost_mkt(book):
     """PV_Base-add.cost.mkt: the commercial-creditor blocks of PV_Base re-run with the interest rate set to the
     market-financing shock (the combo shock of the external DSA). The shock D11 is the average over 2024-25 of
-    the lower of the B2 primary-balance gap times D5 and the cap D6 (400 bp), per the setting in C5."""
+    the lower of the B6 combo-shock primary-balance gap against the baseline times D5 and the cap D6 (400 bp),
+    per the setting in C5 (read from B2_PB_mkt_pub)."""
     S = G(book, 'PV_Base-add.cost.mkt')
     S.set(3, 'A', MKT_NOTE)                                             # a note typed with a leading '='
     In4, Ext, RF = G(book, I4), G(book, 'Ext_Debt_Data'), G(book, 'PV_ResFin_pub')
