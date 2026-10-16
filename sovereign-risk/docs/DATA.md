@@ -12,13 +12,13 @@ Run this on your own machine, or in a cloud environment once api.imf.org, api.wo
 comtradeapi.un.org are allowed. The README's "Pulling country data from the APIs" section has the step-by-step
 guide. In short: install the IMF's sdmx1 client with `pip install -e .[data]`, check the IMF keys with the
 `imf-describe` command, fill `data/country_codes.csv` (iso3, iso2, m49, name) with the `codes` command (from the
-World Bank country list; add M49 numbers by hand), then run `scripts/fetch_country_data.py` once per file:
+World Bank country list, with M49 numbers from UN Comtrade), then run `scripts/fetch_country_data.py` once per file:
 
     cd sovereign-risk
     python scripts/fetch_country_data.py ews   --countries ARG,ZMB,SLV
     python scripts/fetch_country_data.py trade --countries ARG,ZMB,SLV --partners USA,CHN,ARG,ZMB,SLV --years 2015-2024
 
-and likewise `banks`, `commodities`, `rates` and `remittances`. The script calls `build_ews_panel` in
+and likewise `banks`, `commodities`, `rates` and `remittances`. `--countries all` pulls every country in the codes file. The script calls `build_ews_panel` in
 `sovrisk/connectors.py` and the fetch and parse functions in `sovrisk/spillover_data.py` (both read the IMF through
 `sovrisk/imf.py`), converts flows to % of GDP with World Bank GDP in US$, and writes each file. If a source fails,
 nothing is written and the error names the URL. These have never run against a live response, so check the first

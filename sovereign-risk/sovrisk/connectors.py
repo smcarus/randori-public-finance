@@ -140,9 +140,18 @@ def build_ews_panel(path=None, iso2_by_iso3=None, countries=None, y0=1980, y1=20
     for col, ind in EWS_WB.items():
         for iso, y, v in _ews_fetch(wb_series, f'World Bank {ind} ({WB.format(ind=ind, y0=y0, y1=y1)})', ind, y0, y1):
             raw.setdefault((iso, y), {})[col] = v
+    no_gap = []
     for iso3, iso2 in (iso2_by_iso3 or {}).items():
-        for _, y, v in bis_credit_gap(iso2, y0, y1):
+        try:
+            gaps = bis_credit_gap(iso2, y0, y1)
+        except EWSFetchError:    # the BIS publishes gaps for about 44 economies; ews.py computes the rest
+            no_gap.append(iso3)
+            continue
+        for _, y, v in gaps:
             raw.setdefault((iso3, y), {})['credit_gap'] = v
+    if no_gap:
+        print(f'BIS credit gap not available for {len(no_gap)} of {len(iso2_by_iso3)} countries '
+              f'({", ".join(no_gap[:12])}{", ..." if len(no_gap) > 12 else ""}): ews.py computes their gaps from credit_gdp')
     keep = set(countries) if countries else wb_economies()
     rows = []
     for (iso, y), d in sorted(raw.items()):

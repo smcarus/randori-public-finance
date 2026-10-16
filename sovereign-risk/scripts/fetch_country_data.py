@@ -2,6 +2,7 @@
 panel) and RPF-06 (spillover network) read. NOT YET RUN against live responses: check the first output by eye.
 
     python scripts/fetch_country_data.py ews         --countries ARG,ZMB,SLV
+    python scripts/fetch_country_data.py ews         --countries all     # every country in data/country_codes.csv
     python scripts/fetch_country_data.py trade       --countries ARG,ZMB,SLV --partners USA,CHN --years 2015-2024
     python scripts/fetch_country_data.py banks       --countries ARG,ZMB,SLV --partners USA,GBR,ESP --years 2015-2024
     python scripts/fetch_country_data.py commodities --countries ARG,ZMB,SLV --years 2024
@@ -15,7 +16,8 @@ IMF data (ews, trade) comes through the IMF's SDMX API with the sdmx1 client, sd
 sovrisk/imf.py; pip install sdmx1). banks, commodities and remittances need data/country_codes.csv (iso3, iso2, m49,
 name), because the BIS keys countries by ISO2, Comtrade by M49 number and the remittance matrix by name; ews uses
 its iso2 column for the BIS credit gap if it is filled. The codes command fills iso3, iso2 and name for every
-economy from the World Bank country list (api.worldbank.org/v2/country/all); m49 stays as you entered it. The
+economy from the World Bank country list (api.worldbank.org/v2/country/all) and m49 from UN Comtrade's reporter
+list (a number already entered is kept when Comtrade has none). The
 market command writes data/market_prices.csv from Yahoo Finance (yfinance), which is kept out of the public repo. Fill it for each country you
 use, partners included. A UN Comtrade subscription key, if you have one, is read from the COMTRADE_KEY environment
 variable. Nothing is filled with made-up values: a failed download stops with an error and writes nothing.
@@ -33,6 +35,7 @@ from sovrisk import connectors as cn            # noqa: E402
 from sovrisk import spillover_data as sd        # noqa: E402
 
 COMMODITIES = ('oil', 'metals', 'copper', 'food')
+MANY = 20     # above this many countries, World Bank series come from one country/all request
 
 
 def load_codes(path):
@@ -49,12 +52,37 @@ def years(text):
     return int(a), int(b or a)
 
 
-def gdp_usd(countries, y0, y1):
-    """{(iso3, year): GDP in US$} from the World Bank (NY.GDP.MKTP.CD)."""
+def wb_many(countries, indicator, y0, y1):
+    """{(iso3, year): value} for the countries asked: one request per country for a few, one country/all request
+    (every page) for many."""
+    if len(countries) > MANY:
+        keep = set(countries)
+        return {k: v for k, v in sd.fetch_wb('all', indicator, y0, y1).items() if k[0] in keep}
     out = {}
     for c in countries:
-        out.update(sd.fetch_wb(c, sd.WB_GDP_USD, y0, y1))
+        out.update(sd.fetch_wb(c, indicator, y0, y1))
     return out
+
+
+def gdp_usd(countries, y0, y1):
+    """{(iso3, year): GDP in US$} from the World Bank (NY.GDP.MKTP.CD)."""
+    return wb_many(countries, sd.WB_GDP_USD, y0, y1)
+
+
+def all_iso3(path):
+    """Every ISO3 code in data/country_codes.csv, for --countries all and --partners all."""
+    rows = list(csv.DictReader(open(path, newline='', encoding='utf-8-sig'))) if Path(path).exists() else []
+    codes = [r['iso3'] for r in rows if r.get('iso3')]
+    if not codes:
+        sys.exit(f'{path} has no countries: run "python scripts/fetch_country_data.py codes" first')
+    return codes
+
+
+def iso_list(text, path):
+    text = text.strip()
+    if text.lower() == 'all':
+        return all_iso3(path)
+    return [c.strip().upper() for c in text.split(',') if c.strip()]
 
 
 def by(codes, field):
@@ -97,7 +125,7 @@ def rates(a, codes):
     y0, y1 = years(a.years)
     rows = [{'country': c, 'partner': 'usd_debt_share', 'value_pct_gdp': v, 'year': y,
              'source': f'World Bank IDS {sd.WB_USD_DEBT_SHARE}'}
-            for c in a.countries for (_, y), v in sd.fetch_wb(c, sd.WB_USD_DEBT_SHARE, y0, y1).items()]
+            for (c, y), v in sorted(wb_many(a.countries, sd.WB_USD_DEBT_SHARE, y0, y1).items())]
     print('Add a gfn row per country by hand (gross financing need, % of GDP, from its IMF DSA or sovrisk.srdsf); '
           'the rates channel skips a country without one.')
     return rows, 'spill_rates.csv'
@@ -128,15 +156,21 @@ def country_codes(a):
     path = Path(a.codes)
     old = {r['iso3']: r for r in csv.DictReader(open(path, newline='', encoding='utf-8-sig'))} if path.exists() else {}
     wb = [c for c in sd.fetch_wb_countries() if not c['aggregate']]
-    rows = [{'iso3': c['iso3'], 'iso2': c['iso2'], 'm49': old.get(c['iso3'], {}).get('m49', ''), 'name': c['name']}
-            for c in sorted(wb, key=lambda c: c['iso3'])]
+    try:
+        m49 = sd.fetch_m49()
+    except sd.DataUnavailable as e:
+        m49 = {}
+        print(f'M49 numbers not filled: {e}')
+    rows = [{'iso3': c['iso3'], 'iso2': c['iso2'], 'm49': m49.get(c['iso3']) or old.get(c['iso3'], {}).get('m49', ''),
+             'name': c['name']} for c in sorted(wb, key=lambda c: c['iso3'])]
     rows += [r for k, r in sorted(old.items()) if k not in {c['iso3'] for c in wb}]    # keep hand-added rows
     with open(path, 'w', newline='') as f:
         w = csv.DictWriter(f, fieldnames=['iso3', 'iso2', 'm49', 'name'], extrasaction='ignore')
         w.writeheader()
         w.writerows(rows)
-    print(f'wrote {len(rows)} rows to {path}; m49 is filled for {sum(1 for r in rows if r["m49"])} '
-          '(add M49 numbers by hand for the commodities command)')
+    gaps = [r['iso3'] for r in rows if not r['m49']]
+    print(f'wrote {len(rows)} rows to {path}; m49 is filled for {len(rows) - len(gaps)}'
+          + (f' (none for {", ".join(gaps)}: add those by hand if you need them for the commodities command)' if gaps else ''))
 
 
 def market_prices(a):
@@ -161,8 +195,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description='Pull country data into data/ for RPF-05 and RPF-06.')
     ap.add_argument('what', choices=['ews', 'trade', 'banks', 'commodities', 'rates', 'remittances', 'imf-describe',
                                        'codes', 'market'])
-    ap.add_argument('--countries', default='', help='ISO3 codes, comma-separated')
-    ap.add_argument('--partners', default='', help='ISO3 codes of partner economies (trade, banks)')
+    ap.add_argument('--countries', default='', help='ISO3 codes, comma-separated, or all (every country in country_codes.csv)')
+    ap.add_argument('--partners', default='', help='ISO3 codes of partner economies (trade, banks), or all')
     ap.add_argument('--years', default='', help='a year or a range, e.g. 2015-2024')
     ap.add_argument('--matrix', help='remittance matrix saved as CSV (remittances)')
     ap.add_argument('--codes', default=str(ROOT / 'data' / 'country_codes.csv'))
@@ -181,8 +215,11 @@ def main(argv=None):
         return market_prices(a)
     if not a.countries:
         ap.error('--countries is required')
-    a.countries = [c.strip().upper() for c in a.countries.split(',') if c.strip()]
-    a.partners = [c.strip().upper() for c in a.partners.split(',') if c.strip()]
+    a.countries = iso_list(a.countries, a.codes)
+    a.partners = iso_list(a.partners, a.codes)
+    if a.what == 'banks' and len(a.countries) * len(a.partners) > 2000:
+        print(f'banks: {len(a.countries)} x {len(a.partners)} = {len(a.countries) * len(a.partners)} BIS requests. '
+              'Only about 30 countries report consolidated banking statistics, so list those as --partners.')
     if a.what in ('trade', 'banks') and not a.partners:
         ap.error('--partners is required for trade and banks')
     if a.what != 'ews' and not a.years:

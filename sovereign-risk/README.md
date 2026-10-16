@@ -89,9 +89,9 @@ them. Fill it from the World Bank's country list (`api.worldbank.org/v2/country/
 python scripts/fetch_country_data.py codes
 ```
 
-This writes iso3, iso2 and the World Bank name for every economy, leaving out regional and income aggregates. The
-remittance matrix is a World Bank file and uses the same names. Add M49 numbers by hand from the UN Statistics
-Division's M49 page for the countries you pull commodities for; a rerun keeps them. The World Bank pulls also use
+This writes iso3, iso2 and the World Bank name for every economy, leaving out regional and income aggregates, and
+the M49 number from UN Comtrade's reporter list (public, no key). The remittance matrix is a World Bank file and
+uses the same names. If Comtrade has no number for a country, add it by hand; a rerun keeps it. The World Bank pulls also use
 this list to drop aggregates such as "World" and "Euro area".
 
 **3. (Optional) Get a Comtrade key.** Without one, the script uses Comtrade's public preview endpoint, which caps
@@ -102,7 +102,8 @@ environment variable, never in a file in the repo:
 export COMTRADE_KEY=your-key
 ```
 
-**4. Pull each file.** Run from the `sovereign-risk` folder. Use the same `--countries` list for every command,
+**4. Pull each file.** Run from the `sovereign-risk` folder. `--countries all` (or `--partners all`) means every
+country in `data/country_codes.csv`. Use the same `--countries` list for every command,
 and list as `--partners` the economies whose shocks you want to model plus the countries you score, so the second
 round of the spillover network can pass losses between them.
 
