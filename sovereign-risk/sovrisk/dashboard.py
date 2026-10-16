@@ -422,17 +422,22 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 .sbar{display:flex;align-items:center;gap:6px;min-width:120px}.sbar i{display:block;height:10px;border-radius:0 4px 4px 0;background:var(--sbar)}.sbar span{font-variant-numeric:tabular-nums}
 .ewsm{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.ewsm .card{padding:10px}.ewsm h3{font-size:13px;margin:0}.ewsm .chart{height:190px}
 .src{font-size:12px;color:var(--muted)}.par{padding:7px 0;border-bottom:1px solid var(--line)}.par .src{margin-top:2px}tr.pick td{background:rgba(127,127,127,.08)}td.c{cursor:pointer}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:4px;overflow-x:auto;padding:0 16px;background:var(--card);border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:10px 12px;white-space:nowrap;color:var(--muted)}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:#2e7d5b;font-weight:600}.tabs button small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
+input{font:inherit;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
 .chart{width:100%;height:320px}#map{height:430px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 12px}
 </style></head><body>
 <div class="banner">FOR RESEARCH PURPOSES ONLY. CONFIDENTIAL. Untested, preliminary and illustrative. Not investment advice and not a credit rating.</div>
 <header><h1>__TITLE__</h1><div class="muted" id="sub"></div></header>
+<nav class="tabs" id="tabs" role="tablist" aria-label="Dashboard sections"></nav>
 <main>
+<section id="sov">
 <div class="card"><h2>Risk map</h2><div class="muted">Colour shows the country score (higher is riskier). Click a country to open its page.</div><div id="map"></div></div>
 <div class="grid" style="margin-top:16px">
 <div class="card"><h2>Countries ranked</h2><div id="rank" class="chart" style="height:420px"></div></div>
-<div class="card"><h2>Portfolio loss (Monte Carlo)</h2><div id="mcsum" class="muted"></div><div id="hist" class="chart"></div></div>
 </div>
-<div class="row"><h2 style="margin:0" id="cname"></h2><select id="pick"></select><span id="csrc"></span></div>
+<div class="row"><h2 style="margin:0" id="cname"></h2><select id="pick"></select><button id="golive" hidden title="Pull this country's latest data from the APIs">Pull live data</button><span id="csrc"></span></div>
 <div class="kpis" id="kpis"></div>
 <div class="card lev"><div class="levhead"><h2 style="margin:0">Stability levers</h2><div><button id="lvall">All on</button> <button id="lvnone">Reset</button></div></div>
 <div class="muted">Switch on measures that lower risk and add stability. Each badge shows that lever's effect on its own for this country. Magnitudes are illustrative (rulebook/levers.yaml).</div>
@@ -445,10 +450,41 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="card"><h2>Pillar profile</h2><div id="radar" class="chart"></div></div>
 <div class="card"><h2>Most sensitive indicators</h2><div class="muted">Country-score points per 25-point move in the indicator score</div><div id="sens" class="chart"></div></div>
 <div class="card"><h2>Default probability</h2><div id="pd" class="chart"></div><div id="pdnote" class="muted"></div></div>
-<div class="card"><h2>Political risk insurance</h2><div id="pri"></div><div id="pric" class="chart"></div></div>
 <div class="card"><h2>Restructuring</h2><div id="bonds"></div></div>
 </div>
 <div class="card" style="margin-top:16px"><h2>Calibration (backtest)</h2><div id="calnote" class="muted"></div><div id="cal" class="chart"></div></div>
+</section>
+<section id="port">
+<div class="row"><h2 style="margin:0">Portfolio loss</h2></div>
+<div class="grid">
+<div class="card"><h2>Portfolio loss (Monte Carlo)</h2><div id="mcsum" class="muted"></div><div id="hist" class="chart"></div></div>
+<div class="card"><h2>Share of portfolio expected shortfall, by country</h2><div class="muted">How much of the tail loss each country accounts for</div><div id="esshare" class="chart" style="height:420px"></div></div>
+</div>
+<div class="row"><h2 style="margin:0">Political risk insurance</h2><select id="pripick" aria-label="Country"></select></div>
+<div class="grid">
+<div class="card"><h2 id="prih">Policies for this country</h2><div id="pri"></div><div id="pric" class="chart"></div></div>
+<div class="card"><h2>All policies in the book</h2><div class="muted">Click a row to open that country</div><div class="scroll" id="pribook" style="margin-top:8px"></div></div>
+</div>
+</section>
+<section id="live">
+<div class="row"><h2 style="margin:0">Live country data</h2><span class="tag">Pulled from the providers' APIs · not yet checked against live responses</span></div>
+<div class="muted">Pick a country and pull its latest series from the IMF World Economic Outlook, the World Bank, the BIS credit gaps and Yahoo Finance, then rate it on the early-warning panel (RPF-05). Each feed is pulled on its own: one that fails says why and the others still show.</div>
+<div id="lvnote" style="margin-top:12px"></div>
+<div id="lvform" class="row" hidden>
+<select id="lvpick" aria-label="Country"></select>
+<label class="muted">From <input id="lvy0" type="number" value="2000" min="1960" max="2100" style="width:80px"></label>
+<label class="muted">Currency <input id="lvfx" placeholder="e.g. ARS" maxlength="3" style="width:70px" title="ISO 4217 code for the exchange rate against the US dollar (optional)"></label>
+<button id="lvgo">Pull live data</button> <button id="lvre" title="Ignore the copy pulled earlier in this session">Pull again</button>
+<span id="lvstat" class="muted"></span>
+</div>
+<div id="lvbody" hidden>
+<div class="grid">
+<div class="card"><h2>Feeds</h2><div class="scroll" id="lvfeeds"></div></div>
+<div class="card"><h2>Early-warning rating</h2><div id="lvews"></div></div>
+</div>
+<div class="ewsm" id="lvcharts" style="margin-top:16px"></div>
+</div>
+</section>
 <section id="muni">
 <div class="row"><h2 style="margin:0">Municipal credit scorecard</h2><span class="tag" id="mumodel"></span></div>
 <div class="muted" id="musub"></div>
@@ -567,11 +603,22 @@ Plotly.newPlot('hist', [{type:'bar', x:P.histogram.map((_,i)=>(i+0.5)*w), y:P.hi
   hovertemplate:'Loss ≈ %{x:.1f}: %{y} trials<extra></extra>'}],
   L({xaxis:{title:{text:'Portfolio loss (US$m)'}, gridcolor:grid}, yaxis:{title:{text:'Trials'}, type:'log', gridcolor:grid}}), cfg);
 
-const sel = document.getElementById('pick');
-names.forEach(n => sel.add(new Option(n, n))); sel.onchange = () => show(sel.value);
+const sel = document.getElementById('pick'), psel = document.getElementById('pripick');
+names.forEach(n => { sel.add(new Option(n, n)); psel.add(new Option(n, n)); }); sel.onchange = () => show(sel.value); psel.onchange = () => show(psel.value);
+{ const es = names.filter(n => D.countries[n].es_share != null).sort((a,b)=>D.countries[a].es_share-D.countries[b].es_share);
+  Plotly.newPlot('esshare', [{type:'bar', orientation:'h', y:es, x:es.map(n=>100*D.countries[n].es_share), marker:{color:'#4c78a8'},
+    hovertemplate:'%{y}: %{x:.1f}% of ES<extra></extra>'}], L({margin:{l:10,r:10,t:10,b:40}, yaxis:{automargin:true}, xaxis:{title:{text:'% of portfolio ES'}, gridcolor:grid}}), cfg);
+  document.getElementById('esshare').on('plotly_click', e => show(e.points[0].y));
+  const book = names.flatMap(n => D.countries[n].policies.map(p => ({n, ...p})));
+  document.getElementById('pribook').innerHTML = book.length ? '<table><tr><th>Country</th><th>Policy</th><th>Sector</th><th>Term</th><th>Premium</th><th>Claim prob.</th></tr>'
+    + book.map(p=>`<tr data-c="${p.n}"><td class="c">${p.n}</td><td>${p.id}</td><td>${p.sector}</td><td>${p.term}y</td><td>${num(p.premium_bps)} bps</td><td>${pct(p.claim_prob_term)}</td></tr>`).join('') + '</table>'
+    : '<div class="muted">No policies in data/pri_policies.csv.</div>';
+  document.querySelectorAll('#pribook tr[data-c]').forEach(tr => tr.onclick = () => show(tr.dataset.c)); }
 
 function show(n){
-  const c = D.countries[n]; if(!c) return; sel.value = n; cur = n;
+  const c = D.countries[n]; if(!c) return; sel.value = psel.value = n; cur = n;
+  document.getElementById('prih').textContent = `Policies for ${n}`;
+  document.querySelectorAll('#pribook tr[data-c]').forEach(tr => tr.classList.toggle('pick', tr.dataset.c===n));
   document.getElementById('cname').textContent = n;
   document.getElementById('csrc').innerHTML = c.source==='Model' ? '' : '<span class="tag">Preliminary score only: no model inputs yet</span>';
   const k = [['Score', num(c.score)], ['Grade', c.grade], ['Best / worst', `${num(c.cases.best.score)} / ${num(c.cases.worst.score)}`],
@@ -676,6 +723,8 @@ const _show = show; show = n => { _show(n); if (D.countries[n]) renderLevers(); 
 if (names.length) show(names.includes('Belize') ? 'Belize' : names[0]);
 else {  // no country scored (the public repo ships data/countries.csv and data/inputs.csv header-only): list the levers anyway
   document.getElementById('pick').style.display = 'none';
+  document.getElementById('pripick').style.display = 'none'; document.getElementById('pric').style.display = 'none';
+  document.getElementById('pri').innerHTML = '<div class="muted">No country is loaded: add one to data/countries.csv and its policies to data/pri_policies.csv.</div>';
   document.getElementById('levres').innerHTML = '<div class="card empty" style="flex:1"><h3>No country is loaded, so the levers have nothing to act on.</h3>' +
     '<div class="muted">Add at least one country to <code>data/countries.csv</code> (and its indicator values to <code>data/inputs.csv</code>), ' +
     'then rebuild with <code>python -m sovrisk.dashboard</code>. Each lever then shows its effect on that country\'s score, default probability and losses.</div></div>';
@@ -1041,6 +1090,76 @@ function showSpill(k){
 }
 showSpill(Object.keys(S.scenarios)[0]);
 }}}
+</script>
+<script>
+// ---------------------------------------------------------------- live country data (needs python -m sovrisk.serve)
+{ const el = id => document.getElementById(id), h = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const FEEDS = {imf:'IMF World Economic Outlook', wb:'World Bank', bis:'BIS credit gap', market:'Yahoo Finance', ews:'Early-warning rating'};
+  const RC = {green:'#1a9850', amber:'#d08c00', red:'#c0392b'};
+  let codes = [];
+  const offline = why => { el('lvnote').innerHTML = '<div class="card empty"><h3>Live pulls need the local server.</h3><div class="muted">Run <code>python -m sovrisk.serve</code> in the <code>sovereign-risk</code> folder and open <code>http://localhost:8080</code>. The server pulls from the IMF, World Bank, BIS and Yahoo Finance on your machine, so those sites must be reachable from it.' + (why ? ' (' + h(why) + ')' : '') + '</div></div>'; };
+  async function init(){
+    if (!location.protocol.startsWith('http')) return offline('');
+    try { const r = await fetch('api/countries'); if (!r.ok) throw new Error((await r.json()).error || r.status); codes = await r.json(); }
+    catch (e) { return offline('could not list countries: ' + e.message); }
+    if (!codes.length) return offline('the country list is empty');
+    codes.forEach(c => el('lvpick').add(new Option(`${c.name} (${c.iso3})`, c.iso3)));
+    el('lvform').hidden = false; el('lvgo').onclick = () => pull(false); el('lvre').onclick = () => pull(true);
+    const gl = el('golive'); if (gl && D.countries && Object.keys(D.countries).length) { gl.hidden = false; gl.onclick = () => {
+      const n = (el('pick').value || '').toLowerCase(), c = codes.find(c => c.name.toLowerCase() === n) || codes.find(c => c.name.toLowerCase().startsWith(n));
+      if (c) el('lvpick').value = c.iso3; const b = document.querySelector('#tabs button[data-g=live]'); if (b) b.click(); if (c) pull(false); }; }
+  }
+  async function pull(refresh){
+    const iso = el('lvpick').value, fx = el('lvfx').value.trim(), q = new URLSearchParams({y0: el('lvy0').value || 2000});
+    if (fx) q.set('fx', fx); if (refresh) q.set('refresh', 1);
+    el('lvstat').textContent = `Pulling ${iso}…`; el('lvgo').disabled = el('lvre').disabled = true;
+    try { const r = await fetch(`api/country/${iso}?${q}`), p = await r.json(); if (!r.ok) throw new Error(p.error || r.status); show(p);
+      el('lvstat').textContent = `${p.name || iso}: pulled ${p.pulled}`; }
+    catch (e) { el('lvstat').textContent = 'Pull failed: ' + e.message; }
+    finally { el('lvgo').disabled = el('lvre').disabled = false; }
+  }
+  function show(p){
+    el('lvbody').hidden = false;
+    el('lvfeeds').innerHTML = '<table><tr><th>Feed</th><th>Status</th><th>Series</th><th>Not returned</th><th>Time</th></tr>' + Object.entries(p.feeds).map(([k, f]) =>
+      `<tr><td>${FEEDS[k] || h(k)}</td><td>${f.status === 'ok' ? '<b style="color:#1a9850">✓ OK</b>' : '<b style="color:#c0392b">✕ Failed</b><div class="muted" style="font-size:12px">' + h(f.error) + '</div>'}</td>` +
+      `<td>${k === 'ews' ? (f.rating ? 'rated' : '') : Object.keys(f.series || {}).length}</td><td class="muted">${h((f.missing || []).join(', '))}</td><td>${f.seconds ?? ''}s</td></tr>`).join('') + '</table>';
+    const e = p.feeds.ews;
+    el('lvews').innerHTML = e && e.status === 'ok' && e.rating ? `<div class="kpis" style="margin:0 0 10px"><div class="kpi"><span>Warning score (0 to 100)</span><b>${e.rating.score == null ? '—' : e.rating.score.toFixed(0)}</b></div><div class="kpi"><span>Year rated</span><b>${e.rating.year}</b></div></div>` +
+      '<table><tr><th>Indicator</th><th>Value</th><th>Year</th><th>Rating</th></tr>' + Object.values(e.rating.indicators).map(i =>
+        `<tr><td>${h(i.label)} <span class="muted">(${h(i.unit)})</span></td><td>${i.value == null ? '—' : (+i.value).toFixed(1)}</td><td>${i.year ?? ''}</td><td>${i.rating ? `<b style="color:${RC[i.rating]}">${i.rating}</b>` : '<span class="muted">no data</span>'}</td></tr>`).join('') +
+      `</table><div class="muted" style="font-size:12px;margin-top:6px">${h(e.model)} · ${h(e.weighting)} weights · untested · not a rating</div>`
+      : `<div class="muted">${e ? h(e.error || 'Not computed.') : 'Not computed.'}</div>`;
+    const all = Object.entries(p.feeds).flatMap(([k, f]) => Object.entries(f.series || {}).map(([id, s]) => ({k, id, s})));
+    el('lvcharts').innerHTML = all.map((o, i) => `<div class="card"><h3>${h(o.s.label)}</h3><div class="muted" style="font-size:12px">${h(o.s.unit)} · ${h(o.s.source)}</div><div id="lvc${i}" class="chart"></div></div>`).join('');
+    all.forEach((o, i) => Plotly.newPlot(`lvc${i}`, [{type:'scatter', mode:'lines', x:o.s.points.map(q => q[0]), y:o.s.points.map(q => q[1]), line:{color:'#4c78a8', width:2},
+      hovertemplate:'%{x}: %{y:.2f}<extra></extra>'}], L({margin:{l:45,r:10,t:10,b:30}, showlegend:false, xaxis:{gridcolor:grid, nticks:6, ...(typeof o.s.points[0]?.[0] === 'number' ? {tickformat:'d'} : {type:'date'})}, yaxis:{gridcolor:grid, type:'linear'}}), cfg));
+  }
+  init();
+}
+</script>
+<script>
+// Group the page by type of work: one tab per group, each holding the sections below. A group whose sections all
+// hid themselves (no data) gets no tab. The open tab is kept in the address (#credit) so a link opens it.
+{ const GROUPS = [
+    {id:'credit', label:'Sovereign credit', sub:'Scorecard, levers, default, restructuring', secs:['sov']},
+    {id:'live', label:'Live country data', sub:'IMF, World Bank, BIS, Yahoo', secs:['live']},
+    {id:'portfolio', label:'Portfolio and insurance', sub:'Monte Carlo loss, political risk insurance', secs:['port']},
+    {id:'dsa', label:'Debt sustainability', sub:'IMF MAC SRDSF', secs:['srdsf']},
+    {id:'macro', label:'Macro surveillance', sub:'Early warning, spillovers', secs:['ews','spill']},
+    {id:'ppp', label:'PPP fiscal risk', sub:'PFRAM 2.0', secs:['pfram']},
+    {id:'muni', label:'Municipal credit', sub:'Town scorecard', secs:['muni']}];
+  const el = id => document.getElementById(id), shown = id => el(id) && el(id).style.display !== 'none';
+  const live = GROUPS.filter(g => g.secs.some(shown)), nav = el('tabs');
+  live.forEach(g => { const b = document.createElement('button'); b.setAttribute('role','tab'); b.dataset.g = g.id;
+    b.innerHTML = `${g.label}<small>${g.sub}</small>`; b.onclick = () => { openTab(g.id); history.replaceState(null, '', '#' + g.id); }; nav.appendChild(b); });
+  function openTab(id){
+    live.forEach(g => g.secs.filter(shown).forEach(s => { el(s).hidden = g.id !== id; }));
+    nav.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.g === id));
+    window.dispatchEvent(new Event('resize'));   // charts drawn while hidden take their real width now
+  }
+  const want = location.hash.slice(1);
+  if (live.length) openTab(live.some(g => g.id === want) ? want : live[0].id); else nav.hidden = true;
+}
 </script></body></html>'''
 
 
