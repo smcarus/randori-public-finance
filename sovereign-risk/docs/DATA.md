@@ -8,21 +8,20 @@ use country names, so keep a name-to-ISO3 list if you want to compare results si
 
 ## Route 1: fetch automatically (needs the data hosts reachable)
 
-Run this on your own machine, or here once imf.org, api.worldbank.org, stats.bis.org and comtradeapi.un.org are
-allowed in the project's cloud environment.
+Run this on your own machine, or in a cloud environment once www.imf.org, dataservices.imf.org, api.imf.org,
+api.worldbank.org, stats.bis.org and comtradeapi.un.org are allowed. The README's "Pulling country data from the
+APIs" section has the step-by-step guide. In short: fill `data/country_codes.csv` (iso3, iso2, m49, name) for every
+country and partner, then run `scripts/fetch_country_data.py` once per file:
 
     cd sovereign-risk
-    python -c "from sovrisk.connectors import build_ews_panel; build_ews_panel(countries=['ARG','ZMB','SLV'], iso2_by_iso3={'ARG':'AR','ZMB':'ZM','SLV':'SV'})"
+    python scripts/fetch_country_data.py ews   --countries ARG,ZMB,SLV
+    python scripts/fetch_country_data.py trade --countries ARG,ZMB,SLV --partners USA,CHN,ARG,ZMB,SLV --years 2015-2024
 
-That writes `data/ews_panel.csv` from the IMF (current account, inflation), the World Bank (reserves cover, short-term
-debt, REER, private credit) and the BIS (credit gaps, where it publishes them). `iso2_by_iso3` is only for the BIS;
-without it the module computes credit gaps itself. If a source fails, nothing is written and the error names the URL.
-
-For the spillover files, `sovrisk/spillover_data.py` has a fetch and a parse function per source (IMF trade, BIS bank
-claims, UN Comtrade, World Bank GDP and USD debt share). It also converts flows to % of GDP with `to_pct_gdp` and
-writes each file with `write(rows, 'spill_trade.csv')`. These have never run against a live response, so check
-the first output by eye. The remittance matrix has no API: download it from the World Bank remittances page
-and read it with `parse_remittance_matrix(path, year)`.
+and likewise `banks`, `commodities`, `rates` and `remittances`. The script calls `build_ews_panel` in
+`sovrisk/connectors.py` and the fetch and parse functions in `sovrisk/spillover_data.py`, converts flows to % of
+GDP with World Bank GDP in US$, and writes each file. If a source fails, nothing is written and the error names the
+URL. These have never run against a live response, so check the first output by eye. The remittance matrix and
+each country's gross financing need have no API: see the README.
 
 ## Route 2: enter it by hand (works today)
 

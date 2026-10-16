@@ -40,6 +40,69 @@ python -m sovrisk.ews --country ARG                         # M-22, needs data/e
 python -m sovrisk.spillover --scenario us_recession --rounds   # M-23, needs data/spill_*.csv
 ```
 
+## Pulling country data from the APIs
+
+The early-warning panel and the spillover network read country data from four public APIs. The fetch code is in
+`sovrisk/connectors.py` and `sovrisk/spillover_data.py`; `scripts/fetch_country_data.py` runs it and writes the
+files into `data/`. None of it has run against a live response yet, because the build environment blocks these
+hosts, so check the first output of each source by eye against the provider's website.
+
+| Source | Hosts | Key needed | What it supplies | Written to |
+| --- | --- | --- | --- | --- |
+| IMF | `www.imf.org` (DataMapper), `dataservices.imf.org` and `api.imf.org` (trade) | No | Current account and inflation (WEO); goods exports by partner (IMTS, formerly DOTS) | `ews_panel.csv`, `spill_trade.csv` |
+| World Bank | `api.worldbank.org` | No | Reserves, REER, private credit, short-term debt (WDI, IDS); GDP in US$ for every % of GDP conversion; US dollar share of public debt | `ews_panel.csv`, all `spill_*.csv`, `spill_rates.csv` |
+| BIS | `stats.bis.org` | No | Credit-to-GDP gaps; foreign claims of banks by nationality (consolidated banking statistics) | `ews_panel.csv`, `spill_banks.csv` |
+| UN Comtrade | `comtradeapi.un.org` | Optional | Exports and imports of oil, metals, copper and food | `spill_commodities.csv` |
+
+**1. Make the hosts reachable.** On your own machine they usually are. In a cloud environment, add the hosts above
+to its allowed network list.
+
+**2. List the country codes.** The IMF and BIS key countries by ISO2, Comtrade by UN M49 number and the remittance
+matrix by name, while the models use ISO3. Fill `data/country_codes.csv` (columns `iso3, iso2, m49, name`) with one
+row for every country you score and every partner economy (USA, CHN, ...). ISO2 and ISO3 are on the ISO 3166 list;
+M49 numbers are on the UN Statistics Division's M49 page; use the country names exactly as the remittance matrix
+spells them.
+
+**3. (Optional) Get a Comtrade key.** Without one, the script uses Comtrade's public preview endpoint, which caps
+the rows returned. A free subscription key from the Comtrade developer portal lifts the cap. Put it in an
+environment variable, never in a file in the repo:
+
+```
+export COMTRADE_KEY=your-key
+```
+
+**4. Pull each file.** Run from the `sovereign-risk` folder. Use the same `--countries` list for every command,
+and list as `--partners` the economies whose shocks you want to model plus the countries you score, so the second
+round of the spillover network can pass losses between them.
+
+```
+python scripts/fetch_country_data.py ews         --countries ARG,ZMB,SLV
+python scripts/fetch_country_data.py trade       --countries ARG,ZMB,SLV --partners USA,CHN,ARG,ZMB,SLV --years 2015-2024
+python scripts/fetch_country_data.py banks       --countries ARG,ZMB,SLV --partners USA,GBR,ESP --years 2015-2024
+python scripts/fetch_country_data.py commodities --countries ARG,ZMB,SLV --years 2023-2024
+python scripts/fetch_country_data.py rates       --countries ARG,ZMB,SLV --years 2015-2024
+python scripts/fetch_country_data.py remittances --countries ARG,ZMB,SLV --matrix path/to/matrix.csv --years 2021
+```
+
+- `ews` writes `data/ews_panel.csv` from the IMF, World Bank and BIS. Without `country_codes.csv` it skips the BIS
+  and the model computes credit gaps itself.
+- `rates` writes the US dollar debt share. Add one `gfn` row per country by hand (gross financing need, % of GDP,
+  from its IMF debt sustainability analysis or `sovrisk.srdsf`); the rates channel skips a country without one.
+- `remittances` reads the World Bank bilateral remittance matrix, which has no API. Download it from the World
+  Bank's migration and remittances data page, save the sheet for one year as CSV, and pass its path.
+- A failed download stops with an error naming the URL and writes nothing. Nothing is filled with made-up values.
+
+**5. Optional: crisis dates.** For the early-warning panel's fitted weights, add `data/crisis_dates.csv` (country,
+year, type) from the Laeven and Valencia systemic crises database. It has no API.
+
+**6. Check and run.** Spot-check a few values against the source websites, then run
+`python -m sovrisk.ews` and `python -m sovrisk.spillover --scenario us_recession --rounds`, and rebuild the
+dashboard. [docs/DATA.md](docs/DATA.md) lists every column, unit and source, and how to fill the files by hand
+instead.
+
+Keep licensed data (Bloomberg, LSEG, paid Comtrade extracts) out of the public repo. Check each provider's terms
+before redistributing anything in `data/`.
+
 ## Layout
 
 ```
