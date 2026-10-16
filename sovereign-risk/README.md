@@ -52,7 +52,7 @@ hosts, so check the first output of each source by eye against the provider's we
 | Source | Hosts | Key needed | What it supplies | Written to |
 | --- | --- | --- | --- | --- |
 | IMF | `api.imf.org` (SDMX API, through `sdmx.Client('IMF_DATA')`) | No | Current account and inflation (WEO); goods exports by partner (IMTS, formerly DOTS) | `ews_panel.csv`, `spill_trade.csv` |
-| World Bank | `api.worldbank.org` | No | Reserves, REER, private credit, short-term debt (WDI, IDS); GDP in US$ for every % of GDP conversion; US dollar share of public debt | `ews_panel.csv`, all `spill_*.csv`, `spill_rates.csv` |
+| World Bank | `api.worldbank.org` | No | The country list (`country/all`); reserves, REER, private credit, short-term debt (WDI, IDS); GDP in US$ for every % of GDP conversion; US dollar share of public debt | `ews_panel.csv`, all `spill_*.csv`, `spill_rates.csv` |
 | BIS | `stats.bis.org` | No | Credit-to-GDP gaps; foreign claims of banks by nationality (consolidated banking statistics) | `ews_panel.csv`, `spill_banks.csv` |
 | UN Comtrade | `comtradeapi.un.org` | Optional | Exports and imports of oil, metals, copper and food | `spill_commodities.csv` |
 
@@ -80,10 +80,17 @@ Each prints the dataflow's dimensions in key order with some of their codes. If 
 `WEO`, `IMTS` or `IMTS_EXPORTS` in `sovrisk/imf.py`, change them there.
 
 **2. List the country codes.** The models and the IMF use ISO3, but the BIS keys countries by ISO2, Comtrade by UN
-M49 number and the remittance matrix by name. Fill `data/country_codes.csv` (columns `iso3, iso2, m49, name`) with one
-row for every country you score and every partner economy (USA, CHN, ...). ISO2 and ISO3 are on the ISO 3166 list;
-M49 numbers are on the UN Statistics Division's M49 page; use the country names exactly as the remittance matrix
-spells them.
+M49 number and the remittance matrix by name. `data/country_codes.csv` (columns `iso3, iso2, m49, name`) maps
+them. Fill it from the World Bank's country list (`api.worldbank.org/v2/country/all`):
+
+```
+python scripts/fetch_country_data.py codes
+```
+
+This writes iso3, iso2 and the World Bank name for every economy, leaving out regional and income aggregates. The
+remittance matrix is a World Bank file and uses the same names. Add M49 numbers by hand from the UN Statistics
+Division's M49 page for the countries you pull commodities for; a rerun keeps them. The World Bank pulls also use
+this list to drop aggregates such as "World" and "Euro area".
 
 **3. (Optional) Get a Comtrade key.** Without one, the script uses Comtrade's public preview endpoint, which caps
 the rows returned. A free subscription key from the Comtrade developer portal lifts the cap. Put it in an

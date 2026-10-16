@@ -42,6 +42,7 @@ HS = {'oil': ['2709', '2710', '2711'],
       'copper': ['2603', '74'],
       'food': [f'{i:02d}' for i in range(1, 25)]}
 WB = 'https://api.worldbank.org/v2/country/{iso3}/indicator/{ind}?format=json&per_page=20000&date={y0}:{y1}'
+WB_COUNTRIES = 'https://api.worldbank.org/v2/country/all?format=json&per_page=400'   # the country list
 WB_GDP_USD = 'NY.GDP.MKTP.CD'
 WB_USD_DEBT_SHARE = 'DT.CUR.USDL.ZS'   # currency composition of PPG debt, U.S. dollars (%), IDS
 WB_REMITTANCE_MATRIX = 'https://www.worldbank.org/en/topic/migration/brief/remittances-data'   # page with the download
@@ -130,6 +131,28 @@ def fetch_wb(iso3, indicator, y0, y1):
         pages = int((d[0] or {}).get('pages') or 1)
         page += 1
     return out
+
+
+def fetch_wb_countries():
+    """The World Bank's country list (api.worldbank.org/v2/country/all), every page: one dict per economy or
+    aggregate with iso3, iso2, name, region, income and aggregate (True for regional and income groups)."""
+    out, page, pages = [], 1, 1
+    while page <= pages:
+        d = json.loads(_get(f'{WB_COUNTRIES}&page={page}', 'World Bank country list'))
+        out += parse_wb_countries(d)
+        pages = int((d[0] or {}).get('pages') or 1)
+        page += 1
+    return out
+
+
+def parse_wb_countries(d):
+    """World Bank country-list JSON -> [{iso3, iso2, name, region, income, aggregate}]. Aggregates (World, Euro
+    area, income groups) have region id 'NA'."""
+    if d and isinstance(d[0], dict) and 'message' in d[0]:
+        raise DataUnavailable(f"World Bank API error: {d[0]['message']}")
+    return [{'iso3': c['id'], 'iso2': c['iso2Code'], 'name': c['name'].strip(), 'region': c['region']['value'].strip(),
+             'income': c['incomeLevel']['value'].strip(), 'aggregate': c['region']['id'] == 'NA'}
+            for c in (d[1] if len(d) > 1 and d[1] else [])]
 
 
 def parse_wb(d):

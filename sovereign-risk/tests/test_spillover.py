@@ -1,6 +1,7 @@
 """RPF-06 spillover network: hand-worked examples on HAND-MADE inputs (countries A, B, C are not real)."""
 import copy
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -132,3 +133,38 @@ def test_world_bank_reads_every_page_and_refuses_an_error_reply(monkeypatch):
     assert len(seen) == 2 and 'country/all/indicator/SP.POP.TOTL' in seen[0]
     with pytest.raises(SD.DataUnavailable, match='Invalid value'):
         SD.parse_wb([{'message': [{'id': '120', 'key': 'Invalid value', 'value': 'The provided parameter value is not valid'}]}])
+
+
+WB_COUNTRY_LIST = [{'page': 1, 'pages': 1}, [
+    {'id': 'AAA', 'iso2Code': 'AA', 'name': 'Country A', 'region': {'id': 'LCN', 'value': 'Latin America & Caribbean '},
+     'incomeLevel': {'id': 'UMC', 'value': 'Upper middle income'}},
+    {'id': 'WLD', 'iso2Code': '1W', 'name': 'World', 'region': {'id': 'NA', 'value': 'Aggregates'},
+     'incomeLevel': {'id': 'NA', 'value': 'Aggregates'}}]]
+
+
+def test_world_bank_country_list_marks_aggregates():
+    out = SD.parse_wb_countries(WB_COUNTRY_LIST)
+    assert out == [{'iso3': 'AAA', 'iso2': 'AA', 'name': 'Country A', 'region': 'Latin America & Caribbean',
+                    'income': 'Upper middle income', 'aggregate': False},
+                   {'iso3': 'WLD', 'iso2': '1W', 'name': 'World', 'region': 'Aggregates', 'income': 'Aggregates',
+                    'aggregate': True}]
+
+
+def test_wb_series_drops_aggregates(monkeypatch):
+    from sovrisk import connectors as cn
+    monkeypatch.setattr(cn, '_ECONOMIES', None)
+    monkeypatch.setattr(SD, 'fetch_wb_countries', lambda: SD.parse_wb_countries(WB_COUNTRY_LIST))
+    monkeypatch.setattr(SD, 'fetch_wb', lambda iso3, ind, y0, y1: {('AAA', 2023): 1.0, ('WLD', 2023): 9.0})
+    assert cn.wb_series('FI.RES.TOTL.MO', 2023, 2023) == [('AAA', 2023, 1.0)]
+
+
+def test_codes_command_fills_from_the_country_list_and_keeps_m49(monkeypatch, tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('fetch', Path(__file__).parents[1] / 'scripts' / 'fetch_country_data.py')
+    fetch = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fetch)
+    path = tmp_path / 'country_codes.csv'
+    path.write_text('iso3,iso2,m49,name\nAAA,AA,999,Old name\nZZZ,ZZ,998,Hand-added\n')
+    monkeypatch.setattr(fetch.sd, 'fetch_wb_countries', lambda: SD.parse_wb_countries(WB_COUNTRY_LIST))
+    fetch.main(['codes', '--codes', str(path)])
+    assert path.read_text().splitlines() == ['iso3,iso2,m49,name', 'AAA,AA,999,Country A', 'ZZZ,ZZ,998,Hand-added']

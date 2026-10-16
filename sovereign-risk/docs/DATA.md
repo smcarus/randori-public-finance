@@ -11,8 +11,8 @@ use country names, so keep a name-to-ISO3 list if you want to compare results si
 Run this on your own machine, or in a cloud environment once api.imf.org, api.worldbank.org, stats.bis.org and
 comtradeapi.un.org are allowed. The README's "Pulling country data from the APIs" section has the step-by-step
 guide. In short: install the IMF's sdmx1 client with `pip install -e .[data]`, check the IMF keys with the
-`imf-describe` command, fill `data/country_codes.csv` (iso3, iso2, m49, name) for every country and partner, then
-run `scripts/fetch_country_data.py` once per file:
+`imf-describe` command, fill `data/country_codes.csv` (iso3, iso2, m49, name) with the `codes` command (from the
+World Bank country list; add M49 numbers by hand), then run `scripts/fetch_country_data.py` once per file:
 
     cd sovereign-risk
     python scripts/fetch_country_data.py ews   --countries ARG,ZMB,SLV

@@ -8,11 +8,13 @@ panel) and RPF-06 (spillover network) read. NOT YET RUN against live responses: 
     python scripts/fetch_country_data.py rates       --countries ARG,ZMB,SLV --years 2015-2024
     python scripts/fetch_country_data.py remittances --countries ARG,ZMB,SLV --matrix path/to/matrix.csv --years 2021
     python scripts/fetch_country_data.py imf-describe --flow WEO     # check an IMF dataflow's dimensions and codes
+    python scripts/fetch_country_data.py codes                       # fill data/country_codes.csv from the World Bank
 
 IMF data (ews, trade) comes through the IMF's SDMX API with the sdmx1 client, sdmx.Client('IMF_DATA') (see
 sovrisk/imf.py; pip install sdmx1). banks, commodities and remittances need data/country_codes.csv (iso3, iso2, m49,
 name), because the BIS keys countries by ISO2, Comtrade by M49 number and the remittance matrix by name; ews uses
-its iso2 column for the BIS credit gap if it is filled. Fill it for each country you
+its iso2 column for the BIS credit gap if it is filled. The codes command fills iso3, iso2 and name for every
+economy from the World Bank country list (api.worldbank.org/v2/country/all); m49 stays as you entered it. Fill it for each country you
 use, partners included. A UN Comtrade subscription key, if you have one, is read from the COMTRADE_KEY environment
 variable. Nothing is filled with made-up values: a failed download stops with an error and writes nothing.
 """
@@ -118,6 +120,23 @@ def remittances(a, codes):
         'spill_remittances.csv'
 
 
+def country_codes(a):
+    """Write data/country_codes.csv from the World Bank country list, economies only, keeping any m49 already
+    entered. Names are the World Bank's, which the bilateral remittance matrix also uses."""
+    path = Path(a.codes)
+    old = {r['iso3']: r for r in csv.DictReader(open(path, newline='', encoding='utf-8-sig'))} if path.exists() else {}
+    wb = [c for c in sd.fetch_wb_countries() if not c['aggregate']]
+    rows = [{'iso3': c['iso3'], 'iso2': c['iso2'], 'm49': old.get(c['iso3'], {}).get('m49', ''), 'name': c['name']}
+            for c in sorted(wb, key=lambda c: c['iso3'])]
+    rows += [r for k, r in sorted(old.items()) if k not in {c['iso3'] for c in wb}]    # keep hand-added rows
+    with open(path, 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=['iso3', 'iso2', 'm49', 'name'], extrasaction='ignore')
+        w.writeheader()
+        w.writerows(rows)
+    print(f'wrote {len(rows)} rows to {path}; m49 is filled for {sum(1 for r in rows if r["m49"])} '
+          '(add M49 numbers by hand for the commodities command)')
+
+
 def ews(a, codes):
     iso2 = by(codes, 'iso2') if codes else {}
     y0, y1 = years(a.years) if a.years else (1980, 2026)
@@ -128,7 +147,8 @@ def ews(a, codes):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='Pull country data into data/ for RPF-05 and RPF-06.')
-    ap.add_argument('what', choices=['ews', 'trade', 'banks', 'commodities', 'rates', 'remittances', 'imf-describe'])
+    ap.add_argument('what', choices=['ews', 'trade', 'banks', 'commodities', 'rates', 'remittances', 'imf-describe',
+                                       'codes'])
     ap.add_argument('--countries', default='', help='ISO3 codes, comma-separated')
     ap.add_argument('--partners', default='', help='ISO3 codes of partner economies (trade, banks)')
     ap.add_argument('--years', default='', help='a year or a range, e.g. 2015-2024')
@@ -141,6 +161,8 @@ def main(argv=None):
         for i, (dim, codes) in enumerate(imf.describe(a.flow)):
             print(f"{i + 1}. {dim:24s} {', '.join(codes)}")
         return
+    if a.what == 'codes':
+        return country_codes(a)
     if not a.countries:
         ap.error('--countries is required')
     a.countries = [c.strip().upper() for c in a.countries.split(',') if c.strip()]

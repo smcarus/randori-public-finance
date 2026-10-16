@@ -21,10 +21,25 @@ def imf_series(ind, countries=()):
     return imf.weo_series(ind, countries)
 
 
+def wb_economies():
+    """ISO3 codes of the economies in the World Bank's country list (api.worldbank.org/v2/country/all), without the
+    regional and income aggregates. Fetched once per run."""
+    global _ECONOMIES
+    if _ECONOMIES is None:
+        from .spillover_data import fetch_wb_countries
+        _ECONOMIES = {c['iso3'] for c in fetch_wb_countries() if not c['aggregate']}
+    return _ECONOMIES
+
+
+_ECONOMIES = None
+
+
 def wb_series(ind, y0=1980, y1=2026):
-    """One World Bank indicator for every country (the API's country/all endpoint), reading every page."""
+    """One World Bank indicator for every economy (the API's country/all endpoint, every page), with the regional
+    and income aggregates dropped using the country list."""
     from .spillover_data import fetch_wb
-    return [(iso, y, v) for (iso, y), v in sorted(fetch_wb('all', ind, y0, y1).items())]
+    keep = wb_economies()
+    return [(iso, y, v) for (iso, y), v in sorted(fetch_wb('all', ind, y0, y1).items()) if iso in keep]
 
 
 def build_panel(default_events, y0=1985, y1=2025):
@@ -112,9 +127,10 @@ def bis_credit_gap(iso2, y0=1980, y1=2026):
 
 
 def build_ews_panel(path=None, iso2_by_iso3=None, countries=None, y0=1980, y1=2026):
-    """Fetch the early-warning series and write data/ews_panel.csv (or path). countries: ISO3 codes to keep (World
-    Bank 'all' includes regional aggregates). iso2_by_iso3: {ISO3: ISO2} for the BIS gap; without it the BIS is
-    skipped and ews.py computes gaps from credit_gdp. Returns the rows written."""
+    """Fetch the early-warning series and write data/ews_panel.csv (or path). countries: ISO3 codes to keep (default:
+    every economy in the World Bank country list; regional and income aggregates are dropped). iso2_by_iso3:
+    {ISO3: ISO2} for the BIS gap; without it the BIS is skipped and ews.py computes gaps from credit_gdp. Returns the
+    rows written."""
     import csv
     from pathlib import Path
     raw = {}
@@ -127,9 +143,10 @@ def build_ews_panel(path=None, iso2_by_iso3=None, countries=None, y0=1980, y1=20
     for iso3, iso2 in (iso2_by_iso3 or {}).items():
         for _, y, v in bis_credit_gap(iso2, y0, y1):
             raw.setdefault((iso3, y), {})['credit_gap'] = v
+    keep = set(countries) if countries else wb_economies()
     rows = []
     for (iso, y), d in sorted(raw.items()):
-        if not y0 <= y <= y1 or (countries and iso not in countries):
+        if not y0 <= y <= y1 or iso not in keep:
             continue
         st = d.pop('st_debt_pct_reserves', None)
         d['reserves_std'] = 10000 / st if st else None
