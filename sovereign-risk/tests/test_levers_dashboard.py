@@ -28,3 +28,11 @@ def test_dashboard_renders_without_inputs():
     html = render(dashboard_data(cfg))
     assert 'FOR RESEARCH PURPOSES ONLY. CONFIDENTIAL.' in html and 'Stability levers' in html
     assert grade(55.0) == 6 and grade(100) == 10
+
+
+def test_dashboard_has_pfram_section():
+    data = dashboard_data(load_config())
+    F = data['pfram']
+    assert [p['id'] for p in F['projects']] == ['P1', 'P2', 'P3']
+    assert all(len(p['cases']) == 1 + len(F['shocks']) for p in F['projects'])
+    assert F['portfolio'][0]['year'] == 2026 and 'PPP fiscal risk (PFRAM 2.0)' in render(data)

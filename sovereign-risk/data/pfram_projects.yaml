@@ -1,0 +1,105 @@
+# PFRAM 2.0 inputs (sovrisk/pfram.py). ILLUSTRATIVE AND HYPOTHETICAL: not real projects, contracts or countries.
+# Amounts are in millions of national currency (DOM). Macro series are in data/pfram_macro.csv (billions).
+# Series such as maintenance are listed by project year (first entry = project year 1); missing years are zero.
+# Every project must start in the first year of data/pfram_macro.csv, as in the workbook.
+country: Illustrative economy
+currency: DOM
+note: Illustrative portfolio for testing the PFRAM port. Not a real country or project.
+
+shocks:
+  combined:
+    gdp: -0.03
+    gdp_years: [2031, 2033]
+    er: 0.15
+    er_years: [2031, 2032]
+    inflation: 0.05
+    inflation_years: [2031, 2032]
+
+projects:
+  - id: P1
+    name: Illustrative hospital
+    type: Social infrastructure
+    funding: government
+    start_year: 2026
+    contract_length: 25
+    debt_share: 0.7
+    interest_rate: 0.08
+    tax_rate: 0.25
+    asset_controller: Private Partner
+    gov_controls_services: 'Yes'
+    gov_residual_interest: 'Yes'
+    assets:
+      - {name: Hospital building, construction_period: 3, construction_start: 1, useful_life: 30, cost: 800}
+      - {name: Medical equipment, construction_period: 2, construction_start: 2, useful_life: 10, cost: 200}
+    services:
+      - {name: Availability, unit: year, start: 3, price: 120, price_inflation_indexed: true, gov_demand: 1}
+    maintenance: [0, 0, 0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+    operation: [0, 0, 0, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25]
+    termination_year: 2036
+    termination_method: 1
+    risks:
+      Construction: [Medium, High]
+      Demand: [Low, Low]
+      Financial: [Medium, Medium]
+      Contract termination: [Low, High]
+
+  - id: P2
+    name: Illustrative toll road
+    type: Transport
+    funding: user
+    start_year: 2026
+    contract_length: 30
+    gov_shareholding: 0.1
+    debt_share: 0.75
+    interest_rate: 0.09
+    tax_rate: 0.25
+    asset_controller: Private Partner
+    gov_controls_services: 'No'
+    gov_residual_interest: 'No'
+    assets:
+      - {name: Road, construction_period: 4, construction_start: 1, useful_life: 40, cost: 1500, land_cost: 50}
+    services:
+      - {name: Light vehicles, unit: thousand trips, start: 4, tariff: 0.5, tariff_inflation_indexed: true,
+         user_demand: 400, user_demand_gdp_linked: true}
+    maintenance: [0, 0, 0, 0, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+    operation: [0, 0, 0, 0, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+    royalties: [0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+    debt_guarantee_share: 0.5
+    guaranteed_price: [0, 0, 0, 0, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+    guaranteed_demand: [0, 0, 0, 0, 380, 380, 380, 380, 380, 380, 380, 380, 380, 380, 380]
+    termination_year: 2040
+    termination_method: 2
+    termination_share: 0.8
+    risks:
+      Demand: [High, High]
+      Financial: [Medium, High]
+      Renegotiation: [Medium, Medium]
+
+  - id: P3
+    name: Illustrative water plant
+    type: Water
+    funding: combined
+    start_year: 2026
+    contract_length: 20
+    debt_share: 0.6
+    interest_rate: 0.07
+    tax_rate: 0.3
+    asset_controller: State Owned Enterprise
+    gov_controls_services: 'Yes'
+    gov_residual_interest: 'Yes'
+    assets:
+      - {name: Treatment plant, construction_period: 2, construction_start: 1, useful_life: 20, cost: 600}
+    services:
+      - {name: Bulk water, unit: million m3, start: 2, tariff: 0.04, tariff_currency: FX, tariff_ner_indexed: true,
+         user_demand: 150, user_demand_gdp_linked: true}
+    availability_payment: [0, 0, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+    availability_indexed: true
+    other_gov_payment: [10]
+    maintenance: [0, 0, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+    operation: [0, 0, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
+    termination_year: 2035
+    termination_method: 1
+    risks:
+      Financial: [High, Medium]
+      Demand: [Medium, Medium]
+      Change in law: [Low, Medium]

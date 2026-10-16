@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import load_config, run_model
+from . import load_config, pfram, run_model
 from .backtest import pd_backtest
 from .config import ROOT
 from .decisions import bond_table, default_table, pri_book, _rows
@@ -115,7 +115,38 @@ def dashboard_data(cfg, root=ROOT):
                       'exposure': sum(cfg.mc_portfolio[c]['exposure'] for c in cfg.countries)},
         'backtest': {'brier': bt.get('brier'), 'skill': bt.get('skill'), 'n': bt.get('n'), 'bins': bt.get('bins', []),
                      'synthetic': bool(cfg.settings['backtest'].get('include_synthetic'))},
+        'pfram': pfram_data(root),
     })
+
+
+def pfram_data(root=ROOT):
+    """PPP fiscal risk (sovrisk.pfram): the portfolio's effect on headline indicators and one page per project."""
+    if not (Path(root) / 'data' / 'pfram_projects.yaml').exists():
+        return None
+    r = pfram.run_all(root)
+    end = max(p.start_year + p.contract_length for p in r['projects'])
+    cut = lambda rows: [x for x in rows if x['year'] <= end]
+    projects = []
+    for i, res in enumerate(r['base']):
+        p, s, R = res['project'], res['summary'], res['rows']
+        peak = max(range(len(R[208])), key=lambda j: R[208][j])
+        projects.append({
+            'id': p.id, 'name': p.name, 'type': p.type, 'funding': p.funding, 'start': p.start_year,
+            'end': p.start_year + p.contract_length - 1, 'illustrative': p.illustrative,
+            'cost': s['total_construction_cost'], 'effective_rate': s['effective_rate'], 'equity_irr': s['equity_irr'],
+            'project_irr': s['project_irr'], 'on_balance_sheet': s['on_balance_sheet'],
+            'debt_guarantee_max': s['debt_guarantee_max'], 'peak_liabilities': R[208][peak],
+            'peak_liabilities_pct': R[740][peak], 'peak_year': res['years'][peak], 'termination': R['termination'],
+            'risks': [{'category': k, 'likelihood': v[0], 'impact': v[1], 'rating': pfram.risk_rating(*v)}
+                      for k, v in (p.risks or {}).items()],
+            'cases': {'Base case': pfram.project_table(res),
+                      **{f'Shock: {k}': pfram.project_table(v[i]) for k, v in r['shocked'].items()}},
+        })
+    return {'country': r['country'], 'note': r['note'], 'quirks': pfram.QUIRKS,
+            'shocks': {k: {f: getattr(v, f) for f in ('gdp', 'gdp_years', 'er', 'er_years', 'inflation', 'inflation_years')}
+                       for k, v in r['shocks'].items()},
+            'portfolio': cut(r['portfolio']), 'portfolio_shocked': {k: cut(v) for k, v in r['portfolio_shocked'].items()},
+            'projects': projects}
 
 
 def render(data, title='Sovereign Risk Dashboard'):
@@ -164,6 +195,7 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 .sw{width:34px;height:20px;border-radius:10px;background:var(--line);position:relative;margin-top:1px;transition:.15s}.sw:after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}
 .tog.on .sw{background:#2e7d5b}.tog.on .sw:after{left:16px}.badge{display:inline-block;margin:2px 0;font-size:12px;padding:1px 6px;border-radius:4px;background:rgba(46,125,91,.12);color:#2e7d5b;font-weight:600}.badge.none{background:var(--line);color:var(--muted);font-weight:400}
 .tog:focus-within{outline:2px solid #2e7d5b}.kpi em{display:block;font-style:normal;font-size:12px;color:#2e7d5b;font-weight:600}
+.rm{display:grid;grid-template-columns:70px repeat(3,1fr);gap:4px;font-size:12px}.rm div{padding:6px;border-radius:6px;min-height:54px}.rm .ax{color:var(--muted);font-weight:600;min-height:0;display:flex;align-items:center}.rm b{display:block;font-size:11px}.kpi small{font-size:12px;font-weight:400}details summary{cursor:pointer;color:var(--muted)}.scroll{overflow-x:auto}
 .chart{width:100%;height:320px}#map{height:430px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 12px}
 </style></head><body>
 <div class="banner">FOR RESEARCH PURPOSES ONLY. CONFIDENTIAL. Untested, preliminary and illustrative. Not investment advice and not a credit rating.</div>
@@ -191,6 +223,27 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="card"><h2>Restructuring</h2><div id="bonds"></div></div>
 </div>
 <div class="card" style="margin-top:16px"><h2>Calibration (backtest)</h2><div id="calnote" class="muted"></div><div id="cal" class="chart"></div></div>
+<section id="pfram">
+<div class="row"><h2 style="margin:0">PPP fiscal risk (PFRAM 2.0)</h2><span class="tag" id="pfillus"></span></div>
+<div class="muted" id="pfsub"></div>
+<div class="grid" style="margin-top:12px">
+<div class="card"><h2>Government liabilities from PPPs, by project</h2><div class="muted">% of GDP. The dashed line is the portfolio total under the shock.</div><div id="pfliab" class="chart"></div></div>
+<div class="card"><h2>Gross public debt with and without PPPs</h2><div class="muted">% of GDP</div><div id="pfdebt" class="chart"></div></div>
+<div class="card"><h2>Contingent liabilities, by project</h2><div class="muted">Maximum exposure from debt and revenue guarantees, % of GDP</div><div id="pfcont" class="chart"></div></div>
+<div class="card"><h2>PPP effect on the fiscal balance</h2><div class="muted">% of GDP; negative means the PPPs add to the deficit</div><div id="pfbal" class="chart"></div></div>
+</div>
+<div class="row"><h2 style="margin:0" id="pfname"></h2><select id="pfpick"></select><select id="pfcase"></select></div>
+<div class="kpis" id="pfkpis"></div>
+<div class="grid">
+<div class="card"><h2>Government flows</h2><div class="muted">DOM million a year</div><div id="pfgov" class="chart"></div></div>
+<div class="card"><h2>Government balance sheet</h2><div class="muted">DOM million, end of year</div><div id="pfbs" class="chart"></div></div>
+<div class="card"><h2>Private partner cash flows</h2><div class="muted">DOM million a year</div><div id="pfpriv" class="chart"></div></div>
+<div class="card"><h2 id="pftermh">Early termination</h2><div class="muted" id="pftermn"></div><div id="pfterm" class="chart"></div></div>
+<div class="card"><h2>Risk matrix</h2><div class="muted">Likelihood by fiscal impact, as in the workbook's risk sheet</div><div id="pfrisk" style="margin-top:8px"></div></div>
+<div class="card"><h2>Workbook quirks kept for parity</h2><ul id="pfquirks" class="muted" style="padding-left:18px;margin:0"></ul></div>
+</div>
+<div class="card" style="margin-top:16px"><details><summary>Annual table for this project and case</summary><div class="scroll" id="pftable"></div></details></div>
+</section>
 </main>
 <script>window.PlotlyGeoAssets = {topojson: {world_110m: __WORLD__}};</script>
 <script>
@@ -335,8 +388,88 @@ function renderLevers(){
 }
 document.getElementById('lvall').onclick = () => { D.levers.forEach(l=>active.add(l.id)); renderLevers(); };
 document.getElementById('lvnone').onclick = () => { active.clear(); renderLevers(); };
-const _show = show; show = n => { _show(n); renderLevers(); };
+const _show = show; show = n => { _show(n); if (D.countries[n]) renderLevers(); };
 show(names.includes('Belize') ? 'Belize' : names[0]);
+
+// ---------------------------------------------------------------- PPP fiscal risk (PFRAM 2.0)
+const F = D.pfram;
+if (!F) { document.getElementById('pfram').style.display = 'none'; } else {
+const SER = dark ? ['#3987e5','#d95926','#199e70'] : ['#2a78d6','#eb6834','#1baf7a'];   // validated categorical slots 1-3
+const muted = dark ? '#9aa4b2' : '#5b6575', surf = dark ? '#1b2129' : '#fff';
+const STATUS = {Irrelevant:'#c9ced6', Low:'#0ca30c', Medium:'#fab219', High:'#ec835a', Critical:'#d03b3b'};
+const ICON = {Irrelevant:'○', Low:'▽', Medium:'◇', High:'△', Critical:'▲'};
+const m0 = x => x==null ? 'n/a' : Math.round(x).toLocaleString('en-US');
+const shockName = Object.keys(F.portfolio_shocked)[0];
+const yrs = F.portfolio.map(r=>r.year);
+const lineL = (o={}) => L(Object.assign({hovermode:'x unified', margin:{l:45,r:20,t:20,b:30}, legend:{orientation:'h', y:-0.15}}, o));
+// direct label at each line's largest value (the legend carries identity too); lines alternate above and below
+let lineN = 0;
+const peakText = (ys, label) => { if (!label || ys.every(v=>!v)) return ys.map(()=>''); let k = 0; ys.forEach((v,i)=>{ if (Math.abs(v||0) > Math.abs(ys[k]||0)) k = i; }); return ys.map((_,i)=> i===k ? label : ''); };
+const line = (x, y, name, color, extra={}) => Object.assign({type:'scatter', mode:'lines+text', x, y, name, line:{color, width:2},
+  text:peakText(y, 'label' in extra ? extra.label : name), textposition:(lineN++ % 2) ? 'bottom center' : 'top center', textfont:{color:ink, size:11}, cliponaxis:false,
+  hovertemplate:`${name}: %{y:,.2f}<extra></extra>`}, extra, {label:undefined});
+const sh = F.shocks[shockName], span = (a,b) => a==null ? '' : (a===b ? `${a}` : `${a}-${b}`);
+const shDesc = sh ? [sh.gdp ? `real GDP growth ${sh.gdp>0?'+':''}${(100*sh.gdp).toFixed(0)} pts in ${span(...sh.gdp_years)}` : '',
+  sh.er ? `depreciation ${sh.er>0?'+':''}${(100*sh.er).toFixed(0)} pts in ${span(...sh.er_years)}` : '',
+  sh.inflation ? `inflation ${sh.inflation>0?'+':''}${(100*sh.inflation).toFixed(0)} pts in ${span(...sh.inflation_years)}` : ''].filter(Boolean).join(', ') : '';
+document.getElementById('pfillus').textContent = 'Illustrative projects, not real';
+document.getElementById('pfsub').textContent = `${F.country}: ${F.projects.length} hypothetical PPPs, run through a Python port of the IMF and World Bank PFRAM 2.0 workbook. `
+  + (sh ? `Shock "${shockName}": ${shDesc}. ` : '') + F.note;
+
+const at = (p, key, cas='Base case') => { const m = Object.fromEntries(p.cases[cas].map(r=>[r.year, r[key]])); return yrs.map(y => m[y] ?? 0); };
+const PS = F.portfolio_shocked[shockName] || [];
+Plotly.newPlot('pfliab', [...F.projects.map((p,i)=>({type:'bar', name:p.name, x:yrs, y:at(p,'liabilities_pct_gdp'),
+    marker:{color:SER[i%3], line:{color:surf, width:1}}, hovertemplate:`${p.name}: %{y:.2f}%<extra></extra>`})),
+  ...(PS.length ? [{type:'scatter', mode:'lines', name:'Total, shock', x:PS.map(r=>r.year), y:PS.map(r=>r.ppp_debt_pct),
+    line:{color:ink, width:2, dash:'dash'}, hovertemplate:'Total under shock: %{y:.2f}%<extra></extra>'}] : [])],
+  L({barmode:'stack', bargap:0.25, hovermode:'x unified', margin:{l:40,r:10,t:10,b:30}, legend:{orientation:'h', y:-0.15}, yaxis:{gridcolor:grid, ticksuffix:'%'}}), cfg);
+const P0 = F.portfolio;
+Plotly.newPlot('pfdebt', [line(yrs, P0.map(r=>r.gross_debt_pct), 'Without PPPs', muted, {line:{color:muted, width:2, dash:'dot'}}),
+  line(yrs, P0.map(r=>r.gross_debt_with_ppp_pct), 'With PPPs', SER[0]),
+  ...(PS.length ? [line(PS.map(r=>r.year), PS.map(r=>r.gross_debt_with_ppp_pct), 'With PPPs, shock', SER[1], {label:'', line:{color:SER[1], width:2, dash:'dash'}})] : [])],
+  lineL({yaxis:{gridcolor:grid, ticksuffix:'%'}}), cfg);
+Plotly.newPlot('pfcont', F.projects.map((p,i)=>line(yrs, at(p,'contingent_pct_gdp'), p.name, SER[i%3], {label:p.id})), lineL({yaxis:{gridcolor:grid, ticksuffix:'%'}}), cfg);
+Plotly.newPlot('pfbal', [line(yrs, P0.map(r=>r.ppp_nlb_pct), 'Overall', SER[0]), line(yrs, P0.map(r=>r.ppp_cash_pct), 'Cash', SER[1])],
+  lineL({yaxis:{gridcolor:grid, ticksuffix:'%', zeroline:true, zerolinecolor:muted}}), cfg);
+
+const pp = document.getElementById('pfpick'), pc = document.getElementById('pfcase');
+F.projects.forEach(p => pp.add(new Option(`${p.id} ${p.name}`, p.id)));
+Object.keys(F.projects[0].cases).forEach(k => pc.add(new Option(k, k)));
+document.getElementById('pfquirks').innerHTML = F.quirks.map(q=>`<li>${q}</li>`).join('');
+function showPF(){
+  const p = F.projects.find(x=>x.id===pp.value), cas = pc.value, T = p.cases[cas], y = T.map(r=>r.year), col = k => T.map(r=>r[k]);
+  const t = p.termination, peak = T.reduce((b,r)=> r.liabilities > b.liabilities ? r : b, T[0]);
+  document.getElementById('pfname').textContent = p.name;
+  const k = [['Construction cost', `${m0(p.cost)}m`], ['Effective interest rate', pct(p.effective_rate,2)], ['Equity IRR', pct(p.equity_irr,1)],
+    ['Peak government liabilities', `${num(peak.liabilities_pct_gdp,2)}% GDP <small class="muted">${peak.year}</small>`],
+    ['Government balance sheet', p.on_balance_sheet ? 'On' : 'Off'], ['Largest debt guarantee', `${m0(p.debt_guarantee_max)}m`],
+    ['Termination payment', t.year ? `${m0(t.payment)}m <small class="muted">${t.year}</small>` : 'none']];
+  document.getElementById('pfkpis').innerHTML = k.map(([a,b])=>`<div class="kpi"><span>${a}</span><b>${b}</b></div>`).join('')
+    + `<div class="kpi"><span>Funding</span><b style="font-size:16px">${p.funding}</b></div>`;
+  Plotly.react('pfgov', [line(y, col('net_lending_borrowing'), 'Net lending', SER[0]), line(y, col('gov_net_cash'), 'Net cash', SER[1])],
+    lineL({yaxis:{gridcolor:grid, zeroline:true, zerolinecolor:muted}}), cfg);
+  Plotly.react('pfbs', [line(y, col('liabilities'), 'Liabilities', SER[0]), line(y, col('nonfinancial_assets'), 'Assets', SER[1]),
+    line(y, col('contingent_max'), 'Contingent', SER[2])], lineL({yaxis:{gridcolor:grid, rangemode:'tozero'}}), cfg);
+  Plotly.react('pfpriv', [line(y, col('revenue'), 'Revenue', SER[0]), line(y, col('debt_service'), 'Debt service', SER[1]),
+    line(y, col('dividends'), 'Dividends', SER[2])], lineL({yaxis:{gridcolor:grid, rangemode:'tozero'}}), cfg);
+  document.getElementById('pftermh').textContent = t.year ? `Early termination in ${t.year}` : 'Early termination';
+  document.getElementById('pftermn').textContent = t.year ? `Government net lending, DOM million. Payment on ${t.method}: ${m0(t.payment)}m (book value ${m0(t.book_value)}m; lost profits ${m0(t.lost_profit_npv)}m).`
+    : 'No termination year entered for this project.';
+  Plotly.react('pfterm', t.year ? [line(y, col('net_lending_borrowing'), 'Contract runs', SER[0], {label:''}),
+    line(y, col('termination_nlb'), 'Terminated', SER[1], {label:'', line:{color:SER[1], width:2, dash:'dash'}})] : [],
+    lineL({yaxis:{gridcolor:grid, zeroline:true, zerolinecolor:muted}, shapes: t.year ? [{type:'line', x0:t.year, x1:t.year, y0:0, y1:1, yref:'paper', line:{color:muted, width:1, dash:'dot'}}] : []}), cfg);
+  const lv = ['High','Medium','Low'], iv = ['Low','Medium','High'];
+  const cell = (l,i) => { const r = p.risks.filter(x=>x.likelihood===l && x.impact===i), rating = ['Irrelevant','Low','Medium','High','Critical'][lv.length-lv.indexOf(l)-1+iv.indexOf(i)];
+    return `<div style="background:${STATUS[rating]}33;border:1px solid ${STATUS[rating]}" title="${rating}"><b>${ICON[rating]} ${rating}</b>${r.map(x=>x.category).join('<br>')}</div>`; };
+  document.getElementById('pfrisk').innerHTML = `<div class="rm"><div class="ax"></div>${iv.map(i=>`<div class="ax">Impact ${i.toLowerCase()}</div>`).join('')}`
+    + lv.map(l=>`<div class="ax">Likelihood ${l.toLowerCase()}</div>` + iv.map(i=>cell(l,i)).join('')).join('') + '</div>'
+    + (p.risks.length ? '' : '<div class="muted">No risks entered for this project.</div>');
+  const cols = Object.keys(T[0]);
+  document.getElementById('pftable').innerHTML = '<table><tr>' + cols.map(c=>`<th>${c.replace(/_/g,' ')}</th>`).join('') + '</tr>'
+    + T.map(r=>'<tr>' + cols.map(c=>`<td>${c==='year' ? r[c] : c.endsWith('pct_gdp') ? num(r[c],2) : m0(r[c])}</td>`).join('') + '</tr>').join('') + '</table>';
+}
+pp.onchange = pc.onchange = showPF; showPF();
+}
 </script></body></html>'''
 
 
