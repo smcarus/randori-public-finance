@@ -360,6 +360,8 @@ class Parser:
         return n
 
     def reference(self, v):
+        if v.endswith('#REF!'):                    # 'Sheet'!#REF! (the '!' of #REF! would split the sheet name)
+            return ('const', REF)
         sheet, a = _split_sheet(v)
         if a.endswith('#REF!'):
             return ('const', REF)

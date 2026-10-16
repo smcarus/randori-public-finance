@@ -117,6 +117,20 @@ stress-scenario GDP expansion drops higher-order terms, and a zero-coupon instru
 label mismatch). The dashboard's debt sustainability section shows the sample run: risk signals, the fan chart, the
 near-term logit, gross financing needs, the medium-term index and the stress tests.
 
+## Debt sustainability: LIC DSF port (sovrisk.licdsf, M-16 v0.1)
+
+`sovrisk/licdsf/` ports the IMF and World Bank Debt Sustainability Framework template for low-income countries
+(LIC DSF, IDA21 version of 8 Dec 2025), all 76 formula sheets. It is an independent port, not endorsed by either
+institution, and untested on a new country.
+
+    python -m sovrisk.licdsf.run --golden <folder of golden files>
+
+Parity: each sheet matches every formula cell of the template's stored Excel values; `run()` from inputs only
+matches all 199,437 formula cells, errors included; and under changed macro paths, loan terms and stress-test
+settings it agrees on every cell with an independent evaluator of the template's own formulas
+(`tests/licdsf_oracle.py`), since LibreOffice cannot recalculate this template. The template's sample is real
+country data, so its golden files and the tests that need them are kept private.
+
 ## What is not here
 
 Randori's analyst inputs (`data/inputs.csv`, `data/countries.csv`), live backtest forecasts and the
