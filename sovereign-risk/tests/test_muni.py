@@ -1,4 +1,4 @@
-"""M-15 municipal credit scorecard: rulebook checks and scoring behaviour on illustrative towns."""
+"""RPF-03 municipal credit scorecard: rulebook checks and scoring behaviour on illustrative towns."""
 import copy
 
 import pytest

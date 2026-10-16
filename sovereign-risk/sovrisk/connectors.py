@@ -56,7 +56,7 @@ def build_panel(default_events, y0=1985, y1=2025):
     return rows
 
 
-# ---- M-22 early-warning panel (sovrisk/ews.py) -------------------------------------------------------------------
+# ---- RPF-05 early-warning panel (sovrisk/ews.py) -------------------------------------------------------------------
 # NOT YET RUN: www.imf.org, api.worldbank.org and stats.bis.org are blocked in the build environment. The URL formats
 # follow each provider's documented API; check the first real response. Nothing here invents or fills data: a series
 # that cannot be fetched raises EWSFetchError, and a cell with no observation is left blank.

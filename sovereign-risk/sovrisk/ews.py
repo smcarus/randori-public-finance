@@ -1,4 +1,4 @@
-"""M-22 macro early-warning panel: green / amber / red ratings on external, credit and price indicators, each
+"""RPF-05 macro early-warning panel: green / amber / red ratings on external, credit and price indicators, each
 country's own-history percentiles, and a warning score weighted by the signals method.
 
     python -m sovrisk.ews                  # latest year for every country in data/ews_panel.csv
@@ -21,7 +21,7 @@ import yaml
 
 from .config import ROOT, read_csv
 
-MODEL = 'M-22 v0.1'
+MODEL = 'RPF-05 v0.1'
 RANK = {'green': 0, 'amber': 1, 'red': 2}
 
 

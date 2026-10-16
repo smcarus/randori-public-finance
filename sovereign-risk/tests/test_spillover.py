@@ -1,4 +1,4 @@
-"""M-23 spillover network: hand-worked examples on HAND-MADE inputs (countries A, B, C are not real)."""
+"""RPF-06 spillover network: hand-worked examples on HAND-MADE inputs (countries A, B, C are not real)."""
 import copy
 
 import numpy as np

@@ -1,5 +1,5 @@
-"""Pull country data from the IMF, World Bank, BIS and UN Comtrade APIs into the data/ files that M-22 (early-warning
-panel) and M-23 (spillover network) read. NOT YET RUN against live responses: check the first output by eye.
+"""Pull country data from the IMF, World Bank, BIS and UN Comtrade APIs into the data/ files that RPF-05 (early-warning
+panel) and RPF-06 (spillover network) read. NOT YET RUN against live responses: check the first output by eye.
 
     python scripts/fetch_country_data.py ews         --countries ARG,ZMB,SLV
     python scripts/fetch_country_data.py trade       --countries ARG,ZMB,SLV --partners USA,CHN --years 2015-2024
@@ -128,7 +128,7 @@ def ews(a, codes):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description='Pull country data into data/ for M-22 and M-23.')
+    ap = argparse.ArgumentParser(description='Pull country data into data/ for RPF-05 and RPF-06.')
     ap.add_argument('what', choices=['ews', 'trade', 'banks', 'commodities', 'rates', 'remittances'])
     ap.add_argument('--countries', required=True, help='ISO3 codes, comma-separated')
     ap.add_argument('--partners', default='', help='ISO3 codes of partner economies (trade, banks)')

@@ -1,4 +1,4 @@
-# M-15 municipal credit scorecard (sovrisk/muni.py). DRAFT weights and thresholds for review.
+# RPF-03 municipal credit scorecard (sovrisk/muni.py). DRAFT weights and thresholds for review.
 # Works for a city or town in any US state. Massachusetts practice is the gold standard for administration: the
 # governance factor scores each town against what MA requires or recommends (each `benchmark` names the MA rule),
 # whether or not the town's own state requires it. Economic and financial indicators use generic definitions; the

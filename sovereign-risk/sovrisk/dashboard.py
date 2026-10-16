@@ -136,7 +136,7 @@ def muni_data(root=ROOT):
 
 
 def ews_data(root=ROOT):
-    """Macro early-warning panel (sovrisk.ews, M-22). Always carries the rulebook thresholds and the notes on missing
+    """Macro early-warning panel (sovrisk.ews, RPF-05). Always carries the rulebook thresholds and the notes on missing
     files; with data/ews_panel.csv it also carries each country's ratings, score and indicator history."""
     root = Path(root)
     if not (root / 'rulebook' / 'ews.yaml').exists():
@@ -170,7 +170,7 @@ def _rel(root, p):
 
 
 def spillover_data(root=ROOT):
-    """Spillover network (sovrisk.spillover, M-23). Always carries the scenarios, the elasticities with their source
+    """Spillover network (sovrisk.spillover, RPF-06). Always carries the scenarios, the elasticities with their source
     notes and the missing exposure files; with exposure data it also carries every scenario's GDP impact by channel
     and the exposures to each scenario's shocked partners."""
     root = Path(root)
@@ -244,7 +244,7 @@ def pfram_data(root=ROOT):
             'projects': projects}
 
 
-# MAC SRDSF (M-16): where each number lives in the template. Rows are 1-based Excel rows, columns letters.
+# MAC SRDSF (RPF-04): where each number lives in the template. Rows are 1-based Excel rows, columns letters.
 SRDSF_SIGNALS = [   # (label, Output row, column of the mechanical signal or None, column of the final assessment or None)
     ('Overall', 19, None, 'O'), ('Near term', 23, 'N', 'O'), ('Medium term', 27, 'N', 'O'),
     ('Medium term: fanchart', 28, 'N', None), ('Medium term: GFN', 29, 'N', None),
@@ -307,7 +307,7 @@ def _srdsf_compute(root):
     lsp = rng(O, 215, 'CG', 'CJ')
     gfn_out = res.get('gfn')
     return {
-        'model': 'M-16 v0.1',
+        'model': 'RPF-04 v0.1',
         'run': {'passes': res['passes'], 'settled': res['settled'], 'fan_seed': res.get('fan', {}).get('seed'),
                 'fan_paths': res.get('fan', {}).get('ntraj'),
                 'gfn_converged': bool(gfn_out[0]) if isinstance(gfn_out, tuple) else False,
@@ -334,7 +334,7 @@ def _srdsf_compute(root):
 
 
 def srdsf_data(root=ROOT, cache=None):
-    """MAC SRDSF (sovrisk.srdsf, M-16): risk signals, fan chart, near-term logit, GFN and medium-term index, stress
+    """MAC SRDSF (sovrisk.srdsf, RPF-04): risk signals, fan chart, near-term logit, GFN and medium-term index, stress
     tests, computed from the IMF template's fictional sample (tests/golden/srdsf).
 
     With no country selected most peer-group lookups of the template return #N/A, so only the country selector
@@ -487,7 +487,7 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 </section>
 <section id="srdsf">
 <div class="row"><h2 style="margin:0">Debt sustainability (MAC SRDSF)</h2><span class="tag">Sample country (fictional data from the IMF template)</span></div>
-<div class="muted" id="srsub">M-16 v0.1 · independent port of the IMF MAC SRDSF template · not endorsed by the IMF · sample country with fictional data · untested for real use</div>
+<div class="muted" id="srsub">RPF-04 v0.1 · independent port of the IMF MAC SRDSF template · not endorsed by the IMF · sample country with fictional data · untested for real use</div>
 <div class="grid" style="margin-top:12px">
 <div class="card"><h2>Risk of sovereign stress: signals</h2><div class="muted">Mechanical signal from the template's tools and the final assessment (staff judgment in the template)</div><div id="srsig" class="scroll" style="margin-top:8px"></div></div>
 <div class="card"><h2>Debt fan chart</h2><div class="muted">Gross public debt, % of GDP: percentile bands of the simulated paths and the baseline</div><div id="srfan" class="chart"></div></div>
@@ -502,7 +502,7 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="muted" id="srfoot" style="margin-top:10px;font-size:12px"></div>
 </section>
 <section id="ews">
-<div class="row"><h2 style="margin:0">Macro early-warning panel</h2><span class="tag" id="ewtag">M-22 v0.1 · untested · not a rating</span></div>
+<div class="row"><h2 style="margin:0">Macro early-warning panel</h2><span class="tag" id="ewtag">RPF-05 v0.1 · untested · not a rating</span></div>
 <div class="muted" id="ewsub"></div>
 <div id="ewempty"></div>
 <div id="ewbody" hidden>
@@ -514,7 +514,7 @@ button{font:inherit;padding:5px 10px;border-radius:6px;border:1px solid var(--li
 <div class="card" style="margin-top:16px" id="ewthwrap"><h2>Indicator thresholds</h2><div class="muted">From rulebook/ews.yaml. Draft thresholds for review; they need no country data.</div><div class="scroll" id="ewth" style="margin-top:8px"></div></div>
 </section>
 <section id="spill">
-<div class="row"><h2 style="margin:0">Spillover network</h2><span class="tag" id="sptag">M-23 v0.1 · untested · draft elasticities</span></div>
+<div class="row"><h2 style="margin:0">Spillover network</h2><span class="tag" id="sptag">RPF-06 v0.1 · untested · draft elasticities</span></div>
 <div class="muted" id="spsub"></div>
 <div id="spempty"></div>
 <div id="spbody" hidden>
@@ -808,7 +808,7 @@ function showPF(){
 pp.onchange = pc.onchange = showPF; showPF();
 }
 
-// ---------------------------------------------------------------- MAC SRDSF (M-16)
+// ---------------------------------------------------------------- MAC SRDSF (RPF-04)
 { const R = D.srdsf;
 if (!R) { document.getElementById('srdsf').style.display = 'none'; } else {
 // categorical slots 1-5 of the validated palette (validate_palette.js: light on #fff, dark on #1b2129, adjacent pairs)
@@ -916,7 +916,7 @@ document.getElementById('srfoot').innerHTML = '<b>Sample country.</b> The number
   + `${ru.passes} formula passes, ${ru.settled ? 'settled' : 'not settled'}. Sources: ` + R.sources.map(([a,b])=>`${a}: ${b}`).join('; ') + '.';
 }}
 
-// ---------------------------------------------------------------- shared by the M-22 and M-23 sections
+// ---------------------------------------------------------------- shared by the RPF-05 and RPF-06 sections
 const SER5 = dark ? ['#3987e5','#d95926','#199e70','#c98500','#d55181'] : ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4'];   // validated categorical slots 1-5
 const ink2 = dark ? '#9aa4b2' : '#5b6575', surf2 = dark ? '#1b2129' : '#fff';
 const esc2 = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
@@ -924,7 +924,7 @@ const rgba2 = (h, a) => `rgba(${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,
 const fv = v => v==null ? 'n/a' : (Math.abs(v)>=100 ? v.toFixed(0) : v.toFixed(1));
 const emptyCard = (items, tail) => `<div class="card empty"><h3>No country data is loaded.</h3><div class="muted">This section needs these files in <code>data/</code>, none of which ship with the repository:</div><ul>${items.join('')}</ul><div class="muted">${tail}</div></div>`;
 
-// ---------------------------------------------------------------- macro early-warning panel (M-22)
+// ---------------------------------------------------------------- macro early-warning panel (RPF-05)
 { const E = D.ews;
 if (!E) { document.getElementById('ews').style.display = 'none'; } else {
 // status chips as in the SRDSF section: icon + label + value, never colour alone
@@ -980,7 +980,7 @@ function showEws(c){
 showEws(cn[0]);
 }}}
 
-// ---------------------------------------------------------------- spillover network (M-23)
+// ---------------------------------------------------------------- spillover network (RPF-06)
 { const S = D.spill;
 if (!S) { document.getElementById('spill').style.display = 'none'; } else {
 const CH = Object.keys(S.channels), SHORT = {trade:'Trade', commodities:'Commodities', banks:'Banks', rates:'Rates', remittances:'Remittances'};

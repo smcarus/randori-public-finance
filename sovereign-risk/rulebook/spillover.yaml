@@ -1,4 +1,4 @@
-# M-23 spillover network (sovrisk/spillover.py). DRAFT elasticities for review; untested.
+# RPF-06 spillover network (sovrisk/spillover.py). DRAFT elasticities for review; untested.
 # Units: exposures are % of the receiving country's GDP; GDP shocks and price shocks are in %; rate shocks in basis
 # points. Results are the change in the receiving country's GDP, in percent.
 # Every `source` names the published literature the number is meant to sit in; none is a fitted estimate. Anything

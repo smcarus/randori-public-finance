@@ -1,4 +1,4 @@
-# M-22 macro early-warning panel (sovrisk/ews.py). DRAFT thresholds and weights for review.
+# RPF-05 macro early-warning panel (sovrisk/ews.py). DRAFT thresholds and weights for review.
 # Each indicator is rated green / amber / red against two thresholds. `bad: low` means low values are risky
 # (amber when value < amber, red when value < red); `bad: high` means high values are risky (amber when > amber, red when > red).
 # Weights here are the fallback, used when no crisis dates are given. With data/crisis_dates.csv the weights come from

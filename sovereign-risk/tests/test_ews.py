@@ -1,4 +1,4 @@
-"""M-22 early-warning panel: ratings, percentiles, signals-method weights, one-sided HP filter, missing data.
+"""RPF-05 early-warning panel: ratings, percentiles, signals-method weights, one-sided HP filter, missing data.
 All panels here are hand-made test inputs, not country data."""
 import math
 import shutil

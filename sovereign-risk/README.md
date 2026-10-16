@@ -14,14 +14,14 @@ The others are Randori's own models, written in Python. Cite the model ID and ve
 
 | ID | Model | Code | Status | Model card |
 | --- | --- | --- | --- | --- |
-| M-13 v0.5 | Sovereign risk scorecard, with scenarios, backtests, Monte Carlo, default PD, PRI, restructuring and levers | `sovrisk/` (`scoring.py` and others) | Port of the Randori workbook; analyst inputs private | [M-13](docs/models/M-13.md) |
-| M-14 v0.1 (proposed) | PPP fiscal risk (PFRAM 2.0 port) | `sovrisk/pfram.py` | Matches the workbook on illustrative projects; untested on a real one | [M-14](docs/models/M-14.md) |
-| M-15 v0.2 (proposed) | Municipal credit scorecard, any US state, Massachusetts practice as benchmark | `sovrisk/muni.py` | Illustrative towns only | [M-15](docs/models/M-15.md) |
-| M-16 v0.1 (proposed) | Debt sustainability: MAC SRDSF and LIC DSF ports | `sovrisk/srdsf/`, `sovrisk/licdsf/` | Matches both templates cell for cell; untested on a new country | [M-16](docs/models/M-16.md) |
-| M-22 v0.1 (proposed) | Macro early-warning panel | `sovrisk/ews.py` | Built; no country data yet | [M-22](docs/models/M-22.md) |
-| M-23 v0.1 (proposed) | Spillover network | `sovrisk/spillover.py` | Built; no country data yet; elasticities are drafts | [M-23](docs/models/M-23.md) |
+| RPF-01 v0.5 (formerly M-13) | Sovereign risk scorecard, with scenarios, backtests, Monte Carlo, default PD, PRI, restructuring and levers | `sovrisk/` (`scoring.py` and others) | Port of the Randori workbook; analyst inputs private | [RPF-01](docs/models/RPF-01.md) |
+| RPF-02 v0.1 | PPP fiscal risk (PFRAM 2.0 port) | `sovrisk/pfram.py` | Matches the workbook on illustrative projects; untested on a real one | [RPF-02](docs/models/RPF-02.md) |
+| RPF-03 v0.2 | Municipal credit scorecard, any US state, Massachusetts practice as benchmark | `sovrisk/muni.py` | Illustrative towns only | [RPF-03](docs/models/RPF-03.md) |
+| RPF-04 v0.1 | Debt sustainability: MAC SRDSF and LIC DSF ports | `sovrisk/srdsf/`, `sovrisk/licdsf/` | Matches both templates cell for cell; untested on a new country | [RPF-04](docs/models/RPF-04.md) |
+| RPF-05 v0.1 | Macro early-warning panel | `sovrisk/ews.py` | Built; no country data yet | [RPF-05](docs/models/RPF-05.md) |
+| RPF-06 v0.1 | Spillover network | `sovrisk/spillover.py` | Built; no country data yet; elasticities are drafts | [RPF-06](docs/models/RPF-06.md) |
 
-"Proposed" means the ID is not yet entered in Randori's Model Inventory.
+RPF stands for Randori Public Finance. Each ID is entered in Randori's Model Inventory.
 
 ## Install and run
 
@@ -30,14 +30,14 @@ pip install -e .[test]
 pytest -q
 pip install -e .[dashboard]       # optional: embeds plotly.js so the dashboard works offline
 
-python -m sovrisk.cli --out outputs                         # M-13 result tables
+python -m sovrisk.cli --out outputs                         # RPF-01 result tables
 python -m sovrisk.dashboard --out outputs/dashboard.html    # one HTML page with every model
-python -m sovrisk.levers --list                             # M-13 stability levers
-python -m sovrisk.pfram --out outputs                       # M-14, illustrative projects
-python -m sovrisk.muni --town "Town E"                      # M-15, illustrative towns
-python -m sovrisk.srdsf.run --golden tests/golden/srdsf --fan --gfn   # M-16 MAC SRDSF, template sample
-python -m sovrisk.ews --country ARG                         # M-22, needs data/ews_panel.csv
-python -m sovrisk.spillover --scenario us_recession --rounds   # M-23, needs data/spill_*.csv
+python -m sovrisk.levers --list                             # RPF-01 stability levers
+python -m sovrisk.pfram --out outputs                       # RPF-02, illustrative projects
+python -m sovrisk.muni --town "Town E"                      # RPF-03, illustrative towns
+python -m sovrisk.srdsf.run --golden tests/golden/srdsf --fan --gfn   # RPF-04 MAC SRDSF, template sample
+python -m sovrisk.ews --country ARG                         # RPF-05, needs data/ews_panel.csv
+python -m sovrisk.spillover --scenario us_recession --rounds   # RPF-06, needs data/spill_*.csv
 ```
 
 ## Pulling country data from the APIs
@@ -126,7 +126,7 @@ docs/              technical documentation (below)
 
 ## What is not here
 
-Randori's analyst inputs (`data/inputs.csv`, `data/countries.csv`), live backtest forecasts, the M-13 workbook parity
+Randori's analyst inputs (`data/inputs.csv`, `data/countries.csv`), live backtest forecasts, the RPF-01 workbook parity
 tests and the LIC DSF golden values (the template's sample is real country data) are kept private.
 `data/backtest_log.csv` holds only SYNTHETIC test rows. Fill `data/inputs.csv` with your own inputs (country, id,
 value, verified, source) to score countries. Data in `data/debt_baseline.csv` is from the IMF World Economic Outlook;

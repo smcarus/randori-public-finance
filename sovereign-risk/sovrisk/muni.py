@@ -1,4 +1,4 @@
-"""M-15 municipal credit scorecard: a 0-100 risk score for a US city or town, in any state.
+"""RPF-03 municipal credit scorecard: a 0-100 risk score for a US city or town, in any state.
 
     python -m sovrisk.muni                 # score every town in data/muni_towns.csv
     python -m sovrisk.muni --town "Town E" # one town, factor by factor
@@ -21,7 +21,7 @@ import yaml
 from .config import ROOT, read_csv
 from .scoring import _interp
 
-MODEL = 'M-15 v0.2'
+MODEL = 'RPF-03 v0.2'
 
 
 def load(root=ROOT):

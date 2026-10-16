@@ -1,4 +1,4 @@
-"""Data for the M-23 spillover network: fetch and parse the exposure sources into data/spill_*.csv. NOT YET RUN: this
+"""Data for the RPF-06 spillover network: fetch and parse the exposure sources into data/spill_*.csv. NOT YET RUN: this
 environment's network policy blocks these hosts, so the functions follow the providers' documented URL formats and
 have never seen a live response. Check the outputs, and the URL formats, on first run.
 

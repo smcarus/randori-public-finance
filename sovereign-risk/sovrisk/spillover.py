@@ -1,4 +1,4 @@
-"""M-23 spillover network: how a shock abroad hits each country's GDP, by channel and by round.
+"""RPF-06 spillover network: how a shock abroad hits each country's GDP, by channel and by round.
 
     python -m sovrisk.spillover --list                    # scenarios in rulebook/spillover.yaml
     python -m sovrisk.spillover --scenario us_recession   # table of GDP impacts from the exposure files
@@ -19,7 +19,7 @@ import yaml
 
 from .config import ROOT, read_csv
 
-MODEL = 'M-23 v0.1'
+MODEL = 'RPF-06 v0.1'
 CHANNELS = ('trade', 'commodities', 'banks', 'rates', 'remittances')
 
 

@@ -1,4 +1,4 @@
-# M-15 v0.2 (proposed): Municipal credit scorecard
+# RPF-03 v0.2: Municipal credit scorecard
 
 **Status:** untested; runs on illustrative towns only. Randori's own model, not a credit rating.
 **Code:** `sovrisk/muni.py`; rulebook `rulebook/muni.yaml`.

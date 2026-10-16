@@ -1,4 +1,4 @@
-"""sovrisk: Python port of the Randori M-13 sovereign risk scorecard (v0.5, UNTESTED, PRELIMINARY).
+"""sovrisk: Python port of the Randori RPF-01 sovereign risk scorecard (v0.5, UNTESTED, PRELIMINARY).
 
 Not investment advice and not a credit rating.
 """

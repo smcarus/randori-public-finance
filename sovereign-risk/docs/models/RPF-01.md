@@ -1,4 +1,4 @@
-# M-13 v0.5: Sovereign risk scorecard
+# RPF-01 v0.5: Sovereign risk scorecard (formerly M-13)
 
 **Status:** untested, preliminary. Port of `Randori_Country_Risk_Scores_Oct2026.xlsx`. Analyst inputs are private.
 **Code:** `sovrisk/debt.py`, `inputs.py`, `scoring.py`, `model.py`; decision tools in `backtest.py`,
@@ -54,5 +54,6 @@ are blank, so the blended PD equals the illustrative scorecard PD.
 
 ## Change log
 
+- 16 Oct 2026: renumbered from M-13 to RPF-01 in the Model Inventory; no change to the model.
 - v0.5: Python port matching the workbook; decision tools, levers and dashboard. One workbook bug found during the
   port was fixed in both places on 15 Oct 2026; no headline result changed.

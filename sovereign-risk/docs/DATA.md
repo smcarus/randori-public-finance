@@ -1,6 +1,6 @@
 # Plugging in real country data
 
-The early-warning panel (M-22) and spillover network (M-23) read plain CSV files from `data/`. Fill them by either
+The early-warning panel (RPF-05) and spillover network (RPF-06) read plain CSV files from `data/`. Fill them by either
 route below, then run the module. Neither module ships with country data.
 
 Country codes are ISO3 (ARG, ZMB, SLV). The sovereign scorecard files (`data/countries.csv`, `data/inputs.csv`)

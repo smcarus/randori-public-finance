@@ -16,12 +16,12 @@ The reference values come from the templates themselves and are saved in `tests/
 
 | Model | Reference | Saved by | Checked by |
 | --- | --- | --- | --- |
-| M-13 scorecard | the Randori workbook's cached values | `scripts/extract_workbook.py` | `test_parity.py` (private: it needs analyst inputs) |
-| M-14 PFRAM | the PFRAM 2.0 workbook with the illustrative projects written in, recalculated in LibreOffice | `scripts/pfram_golden.py` | `test_pfram.py` |
-| M-16 MAC SRDSF | the template's cached values for every cell | `scripts/srdsf_golden.py` | `test_srdsf.py` (each sheet), `test_srdsf_run.py` (whole chain), `test_srdsf_fan.py`, `test_srdsf_gfn.py` (the two macros) |
-| M-16 MAC SRDSF, changed inputs | the template with 101 inputs changed, recalculated in LibreOffice | `scripts/srdsf_alt_golden.py` | `test_srdsf_run.py` |
-| M-16 LIC DSF | the template's cached values for every cell | `scripts/srdsf_golden.py` | `test_licdsf.py`, `test_licdsf_run.py` (private: the sample is real country data) |
-| M-16 LIC DSF, changed inputs | `tests/licdsf_oracle.py`, an independent evaluator of the template's own formulas | computed at test time | `test_licdsf_run.py` (private) |
+| RPF-01 scorecard | the Randori workbook's cached values | `scripts/extract_workbook.py` | `test_parity.py` (private: it needs analyst inputs) |
+| RPF-02 PFRAM | the PFRAM 2.0 workbook with the illustrative projects written in, recalculated in LibreOffice | `scripts/pfram_golden.py` | `test_pfram.py` |
+| RPF-04 MAC SRDSF | the template's cached values for every cell | `scripts/srdsf_golden.py` | `test_srdsf.py` (each sheet), `test_srdsf_run.py` (whole chain), `test_srdsf_fan.py`, `test_srdsf_gfn.py` (the two macros) |
+| RPF-04 MAC SRDSF, changed inputs | the template with 101 inputs changed, recalculated in LibreOffice | `scripts/srdsf_alt_golden.py` | `test_srdsf_run.py` |
+| RPF-04 LIC DSF | the template's cached values for every cell | `scripts/srdsf_golden.py` | `test_licdsf.py`, `test_licdsf_run.py` (private: the sample is real country data) |
+| RPF-04 LIC DSF, changed inputs | `tests/licdsf_oracle.py`, an independent evaluator of the template's own formulas | computed at test time | `test_licdsf_run.py` (private) |
 
 Each port is checked three ways where the template allows it:
 
@@ -53,11 +53,11 @@ needed them, and say why in the commit message.
 
 | File | Covers |
 | --- | --- |
-| `test_engine.py` | M-13 scoring interpolation, PD from score, Kupiec test, bond cash flows and haircuts, CDS-implied PD and blending, logit fit |
-| `test_levers_dashboard.py` | M-13 levers, and the dashboard's data and sections (including M-16, M-22 and M-23) |
-| `test_muni.py` | M-15 rulebook checks, scoring, missing indicators, the Massachusetts benchmark count, any-state scoring |
-| `test_ews.py` | M-22 ratings, own-history percentiles, signals-method weights, one-sided HP filter, missing data |
-| `test_spillover.py` | M-23 first and second rounds, channel split, damping, refusal of a matrix that does not shrink |
+| `test_engine.py` | RPF-01 scoring interpolation, PD from score, Kupiec test, bond cash flows and haircuts, CDS-implied PD and blending, logit fit |
+| `test_levers_dashboard.py` | RPF-01 levers, and the dashboard's data and sections (including RPF-04, RPF-05 and RPF-06) |
+| `test_muni.py` | RPF-03 rulebook checks, scoring, missing indicators, the Massachusetts benchmark count, any-state scoring |
+| `test_ews.py` | RPF-05 ratings, own-history percentiles, signals-method weights, one-sided HP filter, missing data |
+| `test_spillover.py` | RPF-06 first and second rounds, channel split, damping, refusal of a matrix that does not shrink |
 
 All inputs in these tests are hand-made (hypothetical towns, countries A, B and C). None is real data.
 

@@ -1,4 +1,4 @@
-# M-23 v0.1 (proposed): Spillover network
+# RPF-06 v0.1: Spillover network
 
 **Status:** built; no country data loaded; elasticities are drafts; untested. Randori's own model.
 **Code:** `sovrisk/spillover.py`; rulebook `rulebook/spillover.yaml`; data builders in `sovrisk/spillover_data.py`.

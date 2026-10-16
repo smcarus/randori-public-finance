@@ -1,4 +1,4 @@
-# M-22 v0.1 (proposed): Macro early-warning panel
+# RPF-05 v0.1: Macro early-warning panel
 
 **Status:** built; no country data loaded; untested. Randori's own model.
 **Code:** `sovrisk/ews.py`; rulebook `rulebook/ews.yaml`; data builder `connectors.build_ews_panel`.

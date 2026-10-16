@@ -43,7 +43,7 @@ def test_dashboard_has_pfram_section():
 def test_dashboard_has_muni_section():
     data = dashboard_data(load_config())
     U = data['muni']
-    assert len(U['towns']) == 10 and U['model'].startswith('M-15')
+    assert len(U['towns']) == 10 and U['model'].startswith('RPF-03')
     assert 'Municipal credit scorecard' in render(data)
 
 
@@ -73,20 +73,20 @@ def test_dashboard_ews_and_spillover_empty_state():
     """No country data ships with the repository: both sections render their empty state and the rulebook tables."""
     from sovrisk.dashboard import ews_data, spillover_data
     E, S = ews_data(), spillover_data()
-    assert E['model'] == 'M-22 v0.1' and not E['has_data'] and E['countries'] == {} and E['series'] == {}
+    assert E['model'] == 'RPF-05 v0.1' and not E['has_data'] and E['countries'] == {} and E['series'] == {}
     assert [n['file'] for n in E['needs'] if n['missing']][0] == 'data/ews_panel.csv'
     assert any('ews_panel.csv is missing' in n for n in E['notes'])
     assert {i['id'] for i in E['indicators']} >= {'reserves_months', 'inflation', 'credit_gap'}
     assert all(i['amber'] is not None and i['red'] is not None and i['bad'] in ('low', 'high') for i in E['indicators'])
-    assert S['model'] == 'M-23 v0.1' and not S['has_data'] and S['results'] == {}
+    assert S['model'] == 'RPF-06 v0.1' and not S['has_data'] and S['results'] == {}
     assert 'data/spill_trade.csv' in S['missing'] and len(S['missing']) == 5
     assert 'us_recession' in S['scenarios'] and S['params'] and all(p['draft'] for p in S['params'])
     data = dashboard_data(load_config())
     html = render(data)
     ews, spill = _section(html, 'ews'), _section(html, 'spill')
     assert html.index('<section id="srdsf">') < html.index('<section id="ews">') < html.index('<section id="spill">')
-    assert 'M-22 v0.1 · untested · not a rating' in ews and 'Indicator thresholds' in ews and 'id="ewempty"' in ews
-    assert 'M-23 v0.1 · untested · draft elasticities' in spill and 'Elasticities' in spill and 'Scenarios' in spill
+    assert 'RPF-05 v0.1 · untested · not a rating' in ews and 'Indicator thresholds' in ews and 'id="ewempty"' in ews
+    assert 'RPF-06 v0.1 · untested · draft elasticities' in spill and 'Elasticities' in spill and 'Scenarios' in spill
     assert 'No country data is loaded.' in html and 'docs/DATA.md' in html
     assert 'Macro early-warning panel' in render(dict(data, ews=None, spill=None))   # sections hide, page renders
 

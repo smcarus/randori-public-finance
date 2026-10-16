@@ -7,22 +7,22 @@ Every number a reviewer should be able to question (weights, thresholds, stress 
 
 | File | Model | Written | What is in it |
 | --- | --- | --- | --- |
-| `rulebook.yaml` | M-13 | generated from the workbook by `scripts/extract_workbook.py` | Pillars, indicators, indicator weights, five-point thresholds |
-| `settings.yaml` | M-13 | generated from the workbook | Pillar weights, worst-core blend, trigger caps, analyst adjustment limit, small-state rule, debt stress shocks, backtest, Monte Carlo, default fit, PRI and restructuring settings |
-| `levers.yaml` | M-13 levers | by hand | Each lever's indicator effects. Illustrative magnitudes |
-| `muni.yaml` | M-15 | by hand | Factors and weights, indicators with thresholds and their Massachusetts benchmark notes, stress cases |
-| `ews.yaml` | M-22 | by hand | Indicators with amber and red thresholds, fallback weights, signals-method window, HP filter lambda |
-| `spillover.yaml` | M-23 | by hand | Channels with elasticities and a source note for each, second-round damping, scenarios |
+| `rulebook.yaml` | RPF-01 | generated from the workbook by `scripts/extract_workbook.py` | Pillars, indicators, indicator weights, five-point thresholds |
+| `settings.yaml` | RPF-01 | generated from the workbook | Pillar weights, worst-core blend, trigger caps, analyst adjustment limit, small-state rule, debt stress shocks, backtest, Monte Carlo, default fit, PRI and restructuring settings |
+| `levers.yaml` | RPF-01 levers | by hand | Each lever's indicator effects. Illustrative magnitudes |
+| `muni.yaml` | RPF-03 | by hand | Factors and weights, indicators with thresholds and their Massachusetts benchmark notes, stress cases |
+| `ews.yaml` | RPF-05 | by hand | Indicators with amber and red thresholds, fallback weights, signals-method window, HP filter lambda |
+| `spillover.yaml` | RPF-06 | by hand | Channels with elasticities and a source note for each, second-round damping, scenarios |
 
 Each hand-written file starts with comments on units and the direction of risk. All values in them are drafts until
 reviewed.
 
 ## How thresholds work
 
-The M-13 and M-15 scorecards use five threshold points per indicator, from the value that scores 0 (lowest risk) to
+The RPF-01 and RPF-03 scorecards use five threshold points per indicator, from the value that scores 0 (lowest risk) to
 the value that scores 100 (highest risk), scored in straight lines between them (`scoring._interp`). The points may
 run up or down, so `[3, 4, 5, 6.5, 8]` (unemployment, higher is worse) and `[20, 15, 10, 6, 3]` (reserves, lower is
-worse) are both valid. M-22 uses two points per indicator, amber and red, with `bad: low` or `bad: high`.
+worse) are both valid. RPF-05 uses two points per indicator, amber and red, with `bad: low` or `bad: high`.
 
 ## Making a change
 
