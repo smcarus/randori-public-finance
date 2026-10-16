@@ -7,9 +7,12 @@ panel) and RPF-06 (spillover network) read. NOT YET RUN against live responses: 
     python scripts/fetch_country_data.py commodities --countries ARG,ZMB,SLV --years 2024
     python scripts/fetch_country_data.py rates       --countries ARG,ZMB,SLV --years 2015-2024
     python scripts/fetch_country_data.py remittances --countries ARG,ZMB,SLV --matrix path/to/matrix.csv --years 2021
+    python scripts/fetch_country_data.py imf-describe --flow WEO     # check an IMF dataflow's dimensions and codes
 
-Every command except rates and ews needs data/country_codes.csv (iso3, iso2, m49, name), because the IMF and BIS
-key countries by ISO2, Comtrade by M49 number, and the remittance matrix by name. Fill it for each country you
+IMF data (ews, trade) comes through the IMF's SDMX API with the sdmx1 client, sdmx.Client('IMF_DATA') (see
+sovrisk/imf.py; pip install sdmx1). banks, commodities and remittances need data/country_codes.csv (iso3, iso2, m49,
+name), because the BIS keys countries by ISO2, Comtrade by M49 number and the remittance matrix by name; ews uses
+its iso2 column for the BIS credit gap if it is filled. Fill it for each country you
 use, partners included. A UN Comtrade subscription key, if you have one, is read from the COMTRADE_KEY environment
 variable. Nothing is filled with made-up values: a failed download stops with an error and writes nothing.
 """
@@ -61,12 +64,8 @@ def need(mapping, iso3s, field):
 
 
 def trade(a, codes):
-    iso2, y0, y1 = by(codes, 'iso2'), *years(a.years)
-    need(iso2, a.countries + a.partners, 'iso2')
-    to3 = {v: k for k, v in iso2.items()}
-    flows = [(to3.get(rep, rep), to3.get(par, par), y, usd)
-             for c in a.countries
-             for rep, par, y, usd in sd.fetch_imf_exports(iso2[c], [iso2[p] for p in a.partners], y0, y1)]
+    y0, y1 = years(a.years)
+    flows = [f for c in a.countries for f in sd.fetch_imf_exports(c, a.partners, y0, y1)]
     return sd.to_pct_gdp(flows, gdp_usd(a.countries, y0, y1), 'IMF IMTS exports'), 'spill_trade.csv'
 
 
@@ -129,13 +128,21 @@ def ews(a, codes):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='Pull country data into data/ for RPF-05 and RPF-06.')
-    ap.add_argument('what', choices=['ews', 'trade', 'banks', 'commodities', 'rates', 'remittances'])
-    ap.add_argument('--countries', required=True, help='ISO3 codes, comma-separated')
+    ap.add_argument('what', choices=['ews', 'trade', 'banks', 'commodities', 'rates', 'remittances', 'imf-describe'])
+    ap.add_argument('--countries', default='', help='ISO3 codes, comma-separated')
     ap.add_argument('--partners', default='', help='ISO3 codes of partner economies (trade, banks)')
     ap.add_argument('--years', default='', help='a year or a range, e.g. 2015-2024')
     ap.add_argument('--matrix', help='remittance matrix saved as CSV (remittances)')
     ap.add_argument('--codes', default=str(ROOT / 'data' / 'country_codes.csv'))
+    ap.add_argument('--flow', default='WEO', help='IMF dataflow id (imf-describe)')
     a = ap.parse_args(argv)
+    if a.what == 'imf-describe':
+        from sovrisk import imf
+        for i, (dim, codes) in enumerate(imf.describe(a.flow)):
+            print(f"{i + 1}. {dim:24s} {', '.join(codes)}")
+        return
+    if not a.countries:
+        ap.error('--countries is required')
     a.countries = [c.strip().upper() for c in a.countries.split(',') if c.strip()]
     a.partners = [c.strip().upper() for c in a.partners.split(',') if c.strip()]
     if a.what in ('trade', 'banks') and not a.partners:
@@ -143,11 +150,11 @@ def main(argv=None):
     if a.what != 'ews' and not a.years:
         ap.error('--years is required')
     if a.what == 'ews':
-        codes = load_codes(a.codes) if Path(a.codes).exists() else []
-        if not codes:
-            print('no country_codes.csv: skipping the BIS credit gap; ews.py will compute gaps from credit_gdp')
+        codes = list(csv.DictReader(open(a.codes, newline='', encoding='utf-8-sig'))) if Path(a.codes).exists() else []
+        if not by(codes, 'iso2'):
+            print('no iso2 codes in country_codes.csv: skipping the BIS credit gap; ews.py will compute gaps from credit_gdp')
         return ews(a, codes)
-    codes = [] if a.what == 'rates' else load_codes(a.codes)
+    codes = [] if a.what in ('rates', 'trade') else load_codes(a.codes)
     rows, name = {'trade': trade, 'banks': banks, 'commodities': commodities, 'rates': rates,
                   'remittances': remittances}[a.what](a, codes)
     print(f'wrote {len(rows)} rows to {sd.write(rows, name)}')

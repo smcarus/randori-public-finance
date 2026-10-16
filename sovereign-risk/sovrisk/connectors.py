@@ -1,6 +1,6 @@
 """Data connectors for the default-history panel (default_fit) and the RPF-05 early-warning panel (ews). NOT YET RUN:
-the build environment's network policy blocks these hosts (www.imf.org, api.worldbank.org, stats.bis.org). Check
-the outputs on first run.
+the build environment's network policy blocks these hosts (api.imf.org, api.worldbank.org, stats.bis.org). Check
+the outputs on first run. IMF series come through the IMF's SDMX API with the sdmx1 client (sovrisk/imf.py).
 
 imf_series and wb_series return rows of (iso3, year, value); bis_credit_gap returns (iso2, year, value);
 build_panel and build_ews_panel return dict rows. Default dates (the BoC-BoE database) are passed in, not fetched.
@@ -10,7 +10,6 @@ before redistributing.
 import json
 import urllib.request
 
-IMF = 'https://www.imf.org/external/datamapper/api/v1/{ind}'
 WB = 'https://api.worldbank.org/v2/country/all/indicator/{ind}?format=json&per_page=20000&date={y0}:{y1}'
 
 IMF_SERIES = {'debt_gdp': 'GGXWDG_NGDP', 'growth': 'NGDP_RPCH', 'inflation': 'PCPIPCH', 'ca_gdp': 'BCA_NGDPD'}
@@ -22,9 +21,10 @@ def _get(url):
         return json.loads(r.read().decode())
 
 
-def imf_series(ind):
-    d = _get(IMF.format(ind=ind))['values'][ind]
-    return [(iso, int(y), v) for iso, ys in d.items() for y, v in ys.items() if v is not None]
+def imf_series(ind, countries=()):
+    """One IMF World Economic Outlook indicator for every country (or the ISO3 codes given), via sovrisk.imf."""
+    from . import imf
+    return imf.weo_series(ind, countries)
 
 
 def wb_series(ind, y0=1980, y1=2026):
@@ -60,10 +60,10 @@ def build_panel(default_events, y0=1985, y1=2025):
 
 
 # ---- RPF-05 early-warning panel (sovrisk/ews.py) -------------------------------------------------------------------
-# NOT YET RUN: www.imf.org, api.worldbank.org and stats.bis.org are blocked in the build environment. The URL formats
+# NOT YET RUN: api.imf.org, api.worldbank.org and stats.bis.org are blocked in the build environment. The URL formats
 # follow each provider's documented API; check the first real response. Nothing here invents or fills data: a series
 # that cannot be fetched raises EWSFetchError, and a cell with no observation is left blank.
-#   IMF DataMapper  BCA_NGDPD  current account, % of GDP              -> ca_gdp
+#   IMF WEO (SDMX)  BCA_NGDPD  current account, % of GDP              -> ca_gdp
 #                   PCPIPCH    inflation, average consumer prices, %  -> inflation
 #   World Bank WDI  FI.RES.TOTL.MO     total reserves in months of imports             -> reserves_months
 #                   PX.REX.REER        real effective exchange rate index (2010 = 100)  -> reer (ews.py derives reer_dev)
@@ -89,7 +89,7 @@ def _ews_fetch(fn, what, *args):
         return fn(*args)
     except Exception as e:  # network refusal, HTTP error, or an unexpected response shape
         raise EWSFetchError(f'could not fetch {what}: {type(e).__name__}: {e}. If the host is blocked, run where '
-                            'www.imf.org, api.worldbank.org and stats.bis.org are reachable; no data was written.') from e
+                            'api.imf.org, api.worldbank.org and stats.bis.org are reachable; no data was written.') from e
 
 
 def bis_credit_gap(iso2, y0=1980, y1=2026):
@@ -124,7 +124,7 @@ def build_ews_panel(path=None, iso2_by_iso3=None, countries=None, y0=1980, y1=20
     from pathlib import Path
     raw = {}
     for col, ind in EWS_IMF.items():
-        for iso, y, v in _ews_fetch(imf_series, f'IMF DataMapper {ind} ({IMF.format(ind=ind)})', ind):
+        for iso, y, v in _ews_fetch(imf_series, f'IMF WEO {ind} (api.imf.org, SDMX)', ind, tuple(countries or ())):
             raw.setdefault((iso, y), {})[col] = v
     for col, ind in EWS_WB.items():
         for iso, y, v in _ews_fetch(wb_series, f'World Bank {ind} ({WB.format(ind=ind, y0=y0, y1=y1)})', ind, y0, y1):

@@ -29,6 +29,7 @@ RPF stands for Randori Public Finance. Each ID is entered in Randori's Model Inv
 pip install -e .[test]
 pytest -q
 pip install -e .[dashboard]       # optional: embeds plotly.js so the dashboard works offline
+pip install -e .[data]            # optional: the sdmx1 client, for pulling IMF data
 
 python -m sovrisk.cli --out outputs                         # RPF-01 result tables
 python -m sovrisk.dashboard --out outputs/dashboard.html    # one HTML page with every model
@@ -43,22 +44,43 @@ python -m sovrisk.spillover --scenario us_recession --rounds   # RPF-06, needs d
 ## Pulling country data from the APIs
 
 The early-warning panel and the spillover network read country data from four public APIs. The fetch code is in
-`sovrisk/connectors.py` and `sovrisk/spillover_data.py`; `scripts/fetch_country_data.py` runs it and writes the
+`sovrisk/imf.py` (the IMF, through the sdmx1 client), `sovrisk/connectors.py` and `sovrisk/spillover_data.py`;
+`scripts/fetch_country_data.py` runs it and writes the
 files into `data/`. None of it has run against a live response yet, because the build environment blocks these
 hosts, so check the first output of each source by eye against the provider's website.
 
 | Source | Hosts | Key needed | What it supplies | Written to |
 | --- | --- | --- | --- | --- |
-| IMF | `www.imf.org` (DataMapper), `dataservices.imf.org` and `api.imf.org` (trade) | No | Current account and inflation (WEO); goods exports by partner (IMTS, formerly DOTS) | `ews_panel.csv`, `spill_trade.csv` |
+| IMF | `api.imf.org` (SDMX API, through `sdmx.Client('IMF_DATA')`) | No | Current account and inflation (WEO); goods exports by partner (IMTS, formerly DOTS) | `ews_panel.csv`, `spill_trade.csv` |
 | World Bank | `api.worldbank.org` | No | Reserves, REER, private credit, short-term debt (WDI, IDS); GDP in US$ for every % of GDP conversion; US dollar share of public debt | `ews_panel.csv`, all `spill_*.csv`, `spill_rates.csv` |
 | BIS | `stats.bis.org` | No | Credit-to-GDP gaps; foreign claims of banks by nationality (consolidated banking statistics) | `ews_panel.csv`, `spill_banks.csv` |
 | UN Comtrade | `comtradeapi.un.org` | Optional | Exports and imports of oil, metals, copper and food | `spill_commodities.csv` |
 
-**1. Make the hosts reachable.** On your own machine they usually are. In a cloud environment, add the hosts above
-to its allowed network list.
+**1. Make the hosts reachable and install the IMF client.** On your own machine the hosts usually are reachable. In
+a cloud environment, add the hosts above to its allowed network list. Then run `pip install -e .[data]`, which
+installs the sdmx1 package. The IMF data is read the same way as in this example:
 
-**2. List the country codes.** The IMF and BIS key countries by ISO2, Comtrade by UN M49 number and the remittance
-matrix by name, while the models use ISO3. Fill `data/country_codes.csv` (columns `iso3, iso2, m49, name`) with one
+```
+import sdmx
+IMF_DATA = sdmx.Client('IMF_DATA')
+data_msg = IMF_DATA.data('CPI', key='USA+CAN.CPI.CP01.IX.M', params={'startPeriod': 2018})
+cpi_df = sdmx.to_pandas(data_msg)
+```
+
+A key lists the dataflow's dimension values in order, separated by dots; `+` joins several values and an empty
+position means all. The WEO and IMTS keys in `sovrisk/imf.py` follow the IMF's published dimension order but have
+not been checked against a live response, so check them once:
+
+```
+python scripts/fetch_country_data.py imf-describe --flow WEO
+python scripts/fetch_country_data.py imf-describe --flow IMTS
+```
+
+Each prints the dataflow's dimensions in key order with some of their codes. If the order or a code differs from
+`WEO`, `IMTS` or `IMTS_EXPORTS` in `sovrisk/imf.py`, change them there.
+
+**2. List the country codes.** The models and the IMF use ISO3, but the BIS keys countries by ISO2, Comtrade by UN
+M49 number and the remittance matrix by name. Fill `data/country_codes.csv` (columns `iso3, iso2, m49, name`) with one
 row for every country you score and every partner economy (USA, CHN, ...). ISO2 and ISO3 are on the ISO 3166 list;
 M49 numbers are on the UN Statistics Division's M49 page; use the country names exactly as the remittance matrix
 spells them.
