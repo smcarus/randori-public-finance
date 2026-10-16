@@ -9,8 +9,8 @@ use country names, so keep a name-to-ISO3 list if you want to compare results si
 ## Route 1: fetch automatically (needs the data hosts reachable)
 
 Run this on your own machine, or in a cloud environment once api.imf.org, api.worldbank.org, stats.bis.org and
-comtradeapi.un.org are allowed. The README's "Pulling country data from the APIs" section has the step-by-step
-guide. In short: install the IMF's sdmx1 client with `pip install -e .[data]`, check the IMF keys with the
+comtradeapi.un.org (and, for market prices, the Yahoo hosts in the README table) are allowed. The README's "Pulling country data from the APIs" section has the step-by-step
+guide. In short: install the sdmx1 and yfinance clients with `pip install -e .[data]`, check the IMF keys with the
 `imf-describe` command, fill `data/country_codes.csv` (iso3, iso2, m49, name) with the `codes` command (from the
 World Bank country list, with M49 numbers from UN Comtrade), then run `scripts/fetch_country_data.py` once per file:
 
@@ -21,7 +21,8 @@ World Bank country list, with M49 numbers from UN Comtrade), then run `scripts/f
 and likewise `banks`, `commodities`, `rates` and `remittances`. `--countries all` pulls every country in the codes file. The script calls `build_ews_panel` in
 `sovrisk/connectors.py` and the fetch and parse functions in `sovrisk/spillover_data.py` (both read the IMF through
 `sovrisk/imf.py`), converts flows to % of GDP with World Bank GDP in US$, and writes each file. If a source fails,
-nothing is written and the error names the URL. These have never run against a live response, so check the first
+nothing is written and the error names the URL; the one exception is the BIS credit gap, where a country the BIS
+does not cover is named and skipped and the model computes its gap from private credit. These have never run against a live response, so check the first
 output by eye. The remittance matrix and each country's gross financing need have no API: see the README.
 
 Market prices (US Treasury yields, oil, copper, exchange rates) come from Yahoo Finance through yfinance

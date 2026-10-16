@@ -1,4 +1,4 @@
-"""Pull country data from the IMF, World Bank, BIS and UN Comtrade APIs into the data/ files that RPF-05 (early-warning
+"""Pull country data from the IMF, World Bank, BIS, UN Comtrade and Yahoo Finance APIs into the data/ files that RPF-05 (early-warning
 panel) and RPF-06 (spillover network) read. NOT YET RUN against live responses: check the first output by eye.
 
     python scripts/fetch_country_data.py ews         --countries ARG,ZMB,SLV
@@ -9,7 +9,7 @@ panel) and RPF-06 (spillover network) read. NOT YET RUN against live responses: 
     python scripts/fetch_country_data.py rates       --countries ARG,ZMB,SLV --years 2015-2024
     python scripts/fetch_country_data.py remittances --countries ARG,ZMB,SLV --matrix path/to/matrix.csv --years 2021
     python scripts/fetch_country_data.py imf-describe --flow WEO     # check an IMF dataflow's dimensions and codes
-    python scripts/fetch_country_data.py codes                       # fill data/country_codes.csv from the World Bank
+    python scripts/fetch_country_data.py codes                       # fill data/country_codes.csv (World Bank, M49 from Comtrade)
     python scripts/fetch_country_data.py market --years 2015-2026 --fx ARS,ZMW   # Yahoo Finance prices (private file)
 
 IMF data (ews, trade) comes through the IMF's SDMX API with the sdmx1 client, sdmx.Client('IMF_DATA') (see
@@ -17,10 +17,12 @@ sovrisk/imf.py; pip install sdmx1). banks, commodities and remittances need data
 name), because the BIS keys countries by ISO2, Comtrade by M49 number and the remittance matrix by name; ews uses
 its iso2 column for the BIS credit gap if it is filled. The codes command fills iso3, iso2 and name for every
 economy from the World Bank country list (api.worldbank.org/v2/country/all) and m49 from UN Comtrade's reporter
-list (a number already entered is kept when Comtrade has none). The
-market command writes data/market_prices.csv from Yahoo Finance (yfinance), which is kept out of the public repo. Fill it for each country you
-use, partners included. A UN Comtrade subscription key, if you have one, is read from the COMTRADE_KEY environment
-variable. Nothing is filled with made-up values: a failed download stops with an error and writes nothing.
+list (a number already entered is kept when Comtrade has none). Fill it for each country you use, partners
+included. The market command writes data/market_prices.csv from Yahoo Finance (yfinance), which is kept out of the
+public repo. A UN Comtrade subscription key, if you have one, is read from the COMTRADE_KEY environment variable.
+Nothing is filled with made-up values: a failed IMF, World Bank, Comtrade or Yahoo download stops with an error and
+writes nothing. ews is the one exception: a country with no BIS credit gap (the BIS covers about 44) is named and
+skipped, the panel is still written, and sovrisk/ews.py computes that country's gap from credit_gdp.
 """
 import argparse
 import csv

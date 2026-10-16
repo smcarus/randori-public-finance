@@ -1,4 +1,4 @@
-"""Live country pull (sovrisk.live) and the local server (sovrisk.serve). Every provider is replaced by a stand-in
+"""Live country pull (sovrisk.live), the local server (sovrisk.serve) and the early-warning panel builder. Every provider is replaced by a stand-in
 returning hand-made numbers for a hypothetical country AAA; no network. None of these numbers is real data."""
 import json
 import threading

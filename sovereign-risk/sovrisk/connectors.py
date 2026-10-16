@@ -72,7 +72,9 @@ def build_panel(default_events, y0=1985, y1=2025):
 # ---- RPF-05 early-warning panel (sovrisk/ews.py) -------------------------------------------------------------------
 # NOT YET RUN: api.imf.org, api.worldbank.org and stats.bis.org are blocked in the build environment. The URL formats
 # follow each provider's documented API; check the first real response. Nothing here invents or fills data: a series
-# that cannot be fetched raises EWSFetchError, and a cell with no observation is left blank.
+# that cannot be fetched raises EWSFetchError, and a cell with no observation is left blank. The one exception is the
+# BIS credit gap in build_ews_panel: a country the BIS does not cover is named and skipped, and its gap stays blank
+# (ews.py computes it from credit_gdp).
 #   IMF WEO (SDMX)  BCA_NGDPD  current account, % of GDP              -> ca_gdp
 #                   PCPIPCH    inflation, average consumer prices, %  -> inflation
 #   World Bank WDI  FI.RES.TOTL.MO     total reserves in months of imports             -> reserves_months

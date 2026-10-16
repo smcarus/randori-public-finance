@@ -57,10 +57,10 @@ needed them, and say why in the commit message.
 | `test_levers_dashboard.py` | RPF-01 levers, and the dashboard's data and sections (including RPF-04, RPF-05 and RPF-06) |
 | `test_muni.py` | RPF-03 rulebook checks, scoring, missing indicators, the Massachusetts benchmark count, any-state scoring |
 | `test_ews.py` | RPF-05 ratings, own-history percentiles, signals-method weights, one-sided HP filter, missing data |
-| `test_spillover.py` | RPF-06 first and second rounds, channel split, damping, refusal of a matrix that does not shrink |
+| `test_spillover.py` | RPF-06 first and second rounds, channel split, damping, refusal of a matrix that does not shrink; the data connectors on hand-made replies: World Bank paging and errors, the country list and its aggregates, M49 numbers from Comtrade, the `codes` command and `--countries all` |
 | `test_imf.py` | IMF data through the sdmx1 client: the WEO and IMTS keys sent, unit scaling, blank values dropped, a blocked host stopping with an error. Uses a hand-made SDMX-ML sample (`tests/fixtures/`), no network |
 | `test_market.py` | Market prices through yfinance: closing prices to rows, blanks dropped, units, a failing or empty ticker stopping with an error, the output file kept in `.gitignore`. Uses a stand-in for yfinance, no network |
-| `test_live.py` | Live country pull and the local server: every feed pulled and the early-warning rating computed, one failing feed not stopping the others, the cache file, the server's routes and bad input, listening on localhost only. Stand-ins for every provider, no network |
+| `test_live.py` | Live country pull and the local server: every feed pulled and the early-warning rating computed, one failing feed not stopping the others, the cache file, the server's routes and bad input, listening on localhost only, and the early-warning panel builder skipping countries with no BIS gap. Stand-ins for every provider, no network |
 
 All inputs in these tests are hand-made (hypothetical towns, countries A, B and C). None is real data.
 
