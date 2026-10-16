@@ -673,7 +673,20 @@ function renderLevers(){
 document.getElementById('lvall').onclick = () => { D.levers.forEach(l=>active.add(l.id)); renderLevers(); };
 document.getElementById('lvnone').onclick = () => { active.clear(); renderLevers(); };
 const _show = show; show = n => { _show(n); if (D.countries[n]) renderLevers(); };
-show(names.includes('Belize') ? 'Belize' : names[0]);
+if (names.length) show(names.includes('Belize') ? 'Belize' : names[0]);
+else {  // no country scored (the public repo ships data/countries.csv and data/inputs.csv header-only): list the levers anyway
+  document.getElementById('pick').style.display = 'none';
+  document.getElementById('levres').innerHTML = '<div class="card empty" style="flex:1"><h3>No country is loaded, so the levers have nothing to act on.</h3>' +
+    '<div class="muted">Add at least one country to <code>data/countries.csv</code> (and its indicator values to <code>data/inputs.csv</code>), ' +
+    'then rebuild with <code>python -m sovrisk.dashboard</code>. Each lever then shows its effect on that country\'s score, default probability and losses.</div></div>';
+  document.getElementById('levgrid').innerHTML = D.lever_categories.map(cat => `<div class="levcat"><h3>${cat}</h3>` +
+    D.levers.filter(l=>l.category===cat).map(l => `<label class="tog" title="${l.detail.replace(/"/g,'&quot;')}">
+      <input type="checkbox" disabled><span class="sw"></span>
+      <span><b>${l.label}</b> <span class="badge none">needs a country</span><small>${l.detail}</small></span></label>`).join('') + '</div>').join('');
+  document.getElementById('lvall').disabled = document.getElementById('lvnone').disabled = true;
+  document.getElementById('levimpact').style.display = 'none';
+  document.getElementById('levimpact').previousElementSibling.style.display = 'none';
+}
 
 // ---------------------------------------------------------------- municipal credit scorecard
 { const U = D.muni;
