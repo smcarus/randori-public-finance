@@ -1,0 +1,8 @@
+{
+  "name": "Public Finance Risk Terminal",
+  "description": "Institutional-grade Public Finance Risk & Debt Analytics Platform across Municipal, Subnational, and Sovereign tiers with CDS basis, PPP-IFRAM, and IMF DSA modeling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
